@@ -1,0 +1,41 @@
+TALLER RESPONSIVE — DISEÑO DE INTERFACES SOFTWARE
+Selección de asientos de avión (mobile first)
+
+Buzón: Taller Responsive · vence 31 de agosto de 2026, 13:00
+Ventana de disponibilidad: 10:00 - 13:00
+
+ENCARGO (dictado en clase, 2026-08-31)
+  Maquetar UNA sola interfaz de selección de puesto en un avión que se adapte
+  a cualquier tamaño de pantalla. No son dos aplicaciones: es una que cambia
+  de esquema según el punto de quiebre.
+
+  "Mobile es fila, fila, fila... no tengo ancho adicional. Poner elementos en
+   mobile es muy diferente a poner en web."
+
+REQUISITOS
+  1. Mobile first: se diseña primero para móvil y desde ahí se crece con
+     breakpoints hacia tablet y escritorio.
+  2. Breakpoints con media queries, en la notación SM / MD / LG / XL / 2XL,
+     más un punto intermedio propio.
+  3. Selección de un puesto en una fila del avión.
+  4. Límite de 4 puestos. Al seleccionar un quinto, reemplaza al anterior.
+  5. Contador del total que se anima: el número hace el recorrido de un valor
+     al otro, no salta.
+  6. Animación en el avión: al seleccionar, el indicador se desplaza hasta la
+     fila elegida (de la 2 a la 3 hace el recorrido, no aparece de golpe).
+  7. Niveles de cabina: Premium adelante, separado por cortina.
+  8. Al menos un componente que en móvil NO se renderiza y en web sí, y otro
+     al revés, controlados por media query.
+  9. Los puestos seleccionados se muestran y el valor se va sumando.
+ 10. Botón de confirmar.
+ 11. El encabezado cambia: en móvil hay botón de volver, en web aparece la
+     navegación (check-in, mis vuelos).
+ 12. Español por defecto con toggle a inglés (requisito permanente de la
+     materia desde el 2026-08-24).
+
+RESTRICCIONES
+  - Vanilla HTML/CSS/JS, sin build tools, sin frameworks.
+  - Un solo index.html + css + js.
+
+ENTREGA
+  Repositorio de GitHub PÚBLICO (el profesor descontó a quien lo dejó privado).

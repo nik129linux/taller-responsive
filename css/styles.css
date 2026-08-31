@@ -1,0 +1,527 @@
+/* ============================================================
+   AeroPasto — seat picker
+   Mobile first: every base rule targets the smallest screen and
+   the media queries below only ever ADD width, never take it away.
+
+   Breakpoints (Tailwind notation + one custom step):
+     sm    640px   large phone / phone landscape
+     md    768px   tablet portrait
+     bp    900px   custom intermediate step (tablet landscape)
+     lg   1024px   laptop      <- the layout flips to two columns here
+     xl   1280px   desktop
+     2xl  1536px   large monitor / TV
+   ============================================================ */
+
+:root {
+  --ink: #0d1b2a;
+  --ink-soft: #5a6b7d;
+  --line: #dbe3ec;
+  --bg: #f4f7fb;
+  --card: #ffffff;
+
+  --free: #e8eef6;
+  --free-line: #c3d0e0;
+  --premium: #fdf0d5;
+  --premium-line: #e8c98a;
+  --sel: #1b73e8;
+  --busy: #c9d0d8;
+
+  --radius: 12px;
+  --pad: 16px;
+  --shadow: 0 1px 2px rgba(13, 27, 42, .06), 0 8px 24px rgba(13, 27, 42, .06);
+
+  --seat: 34px;   /* grows at wider breakpoints */
+  --gap: 6px;
+  --aisle: 18px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* Room for the fixed mobile bar. Removed at lg, where the bar is gone. */
+  padding-bottom: 88px;
+}
+
+svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- top bar ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--pad);
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar__back {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 8px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.topbar__back:hover { background: var(--free); }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.brand__mark { width: 20px; height: 20px; color: var(--sel); fill: currentColor; stroke: none; }
+
+/* Not rendered on phones: there is no room for it. */
+.topbar__nav { display: none; }
+
+.lang {
+  margin-left: auto;
+  min-width: 44px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.lang:hover { border-color: var(--sel); color: var(--sel); }
+
+/* ---------- flight strip ---------- */
+
+.flight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px var(--pad);
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+
+.flight__leg { display: flex; flex-direction: column; }
+.flight__code { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+.flight__city { font-size: 12px; color: var(--ink-soft); }
+
+.flight__path { display: flex; align-items: center; gap: 6px; flex: 1; color: var(--free-line); }
+.flight__line { flex: 1; height: 1px; background: currentColor; }
+.flight__plane { width: 16px; height: 16px; color: var(--sel); fill: currentColor; stroke: none; }
+
+/* Secondary detail: hidden until there is width to spend on it. */
+.flight__meta { display: none; }
+
+/* ---------- layout ---------- */
+
+.layout {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px var(--pad) 24px;
+}
+
+.title { margin: 0 0 4px; font-size: 20px; letter-spacing: -.02em; }
+.subtitle { margin: 0 0 16px; color: var(--ink-soft); font-size: 13px; }
+
+/* ---------- legend ---------- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.legend li { display: flex; align-items: center; gap: 6px; }
+
+.chip { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--free-line); }
+.chip--free { background: var(--free); }
+.chip--premium { background: var(--premium); border-color: var(--premium-line); }
+.chip--sel { background: var(--sel); border-color: var(--sel); }
+.chip--busy { background: var(--busy); border-color: var(--busy); }
+
+/* ---------- fuselage + rail ---------- */
+
+.fuselage {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 18px 10px 22px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;          /* the cabin never pushes the page sideways */
+  overscroll-behavior-x: contain;
+}
+
+.rail {
+  position: relative;
+  flex: none;
+  width: 26px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--free), transparent);
+}
+
+.rail__marker {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sel);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  /* This is the plane animation: the marker travels to the picked row. */
+  transform: translate(-50%, -50%);
+  transition: top .45s cubic-bezier(.34, 1.4, .5, 1), opacity .2s ease;
+  opacity: 0;
+}
+.rail__marker.is-on { opacity: 1; }
+
+.cabin { flex: 1; min-width: max-content; }
+
+/* ---------- cabin sections ---------- */
+
+.section__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.section__label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* The curtain that splits Premium from Economy. */
+.curtain {
+  position: relative;
+  height: 26px;
+  margin: 14px 0 18px;
+  background: repeating-linear-gradient(90deg, var(--premium-line) 0 3px, transparent 3px 9px);
+  border-radius: 3px;
+  opacity: .55;
+}
+.curtain::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -7px;
+  height: 1px;
+  background: var(--line);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+.row__n {
+  width: 20px;
+  flex: none;
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: right;
+}
+.row__aisle { width: var(--aisle); flex: none; }
+
+/* ---------- seats ---------- */
+
+.seat {
+  width: var(--seat);
+  height: var(--seat);
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--free-line);
+  border-top-left-radius: 9px;
+  border-top-right-radius: 9px;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  background: var(--free);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .16s ease, background .16s ease, color .16s ease, border-color .16s ease;
+}
+.seat:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--sel); }
+.seat:focus-visible { outline: 2px solid var(--sel); outline-offset: 2px; }
+
+.seat--premium { background: var(--premium); border-color: var(--premium-line); }
+
+.seat[aria-pressed="true"] {
+  background: var(--sel);
+  border-color: var(--sel);
+  color: #fff;
+}
+
+.seat:disabled {
+  background: var(--busy);
+  border-color: var(--busy);
+  color: transparent;
+  cursor: not-allowed;
+}
+
+/* Fired when a seat is picked, and again when a 5th pick evicts the oldest. */
+@keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.28); } 100% { transform: scale(1); } }
+@keyframes drop { 0% { transform: scale(1); } 50% { transform: scale(.72) rotate(-6deg); } 100% { transform: scale(1); } }
+.seat.is-pop { animation: pop .34s ease; }
+.seat.is-drop { animation: drop .34s ease; }
+
+/* ---------- desktop summary panel (mobile: not rendered) ---------- */
+
+.panel { display: none; }
+
+/* ---------- mobile bar (desktop: not rendered) ---------- */
+
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px var(--pad);
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -6px 20px rgba(13, 27, 42, .07);
+}
+
+.bar__left { display: flex; flex-direction: column; min-width: 0; }
+.bar__count { font-size: 11px; font-weight: 700; color: var(--sel); }
+.bar__seats {
+  font-size: 12px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amount {
+  margin-left: auto;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;   /* digits stop jittering while counting */
+}
+
+.cta {
+  flex: none;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--sel);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .16s ease, opacity .16s ease;
+}
+.cta:hover:not(:disabled) { background: #1560c9; }
+.cta:disabled { background: var(--busy); cursor: not-allowed; }
+.cta--sm { padding: 10px 14px; font-size: 14px; }
+
+/* ---------- toast ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  z-index: 40;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  transform: translate(-50%, 12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+/* ============================================================
+   SM — 640px. First bit of spare width: bigger seats.
+   ============================================================ */
+@media (min-width: 640px) {
+  :root { --seat: 38px; --gap: 7px; --aisle: 24px; --pad: 24px; }
+  .title { font-size: 24px; }
+  .subtitle { font-size: 14px; }
+}
+
+/* ============================================================
+   MD — 768px. The flight detail list earns its place.
+   ============================================================ */
+@media (min-width: 768px) {
+  .flight__meta {
+    display: flex;
+    gap: 24px;
+    margin: 0 0 0 8px;
+    padding-left: 24px;
+    border-left: 1px solid var(--line);
+  }
+  .flight__meta div { display: flex; flex-direction: column; }
+  .flight__meta dt { font-size: 11px; color: var(--ink-soft); }
+  .flight__meta dd { margin: 0; font-size: 14px; font-weight: 600; }
+
+  .fuselage { padding: 24px 20px 28px; }
+}
+
+/* ============================================================
+   BP — 900px, the custom intermediate step. The cabin stops
+   stretching edge to edge and centres, which is where it starts
+   reading like a plane instead of a grid.
+   ============================================================ */
+@media (min-width: 900px) {
+  :root { --seat: 42px; --aisle: 32px; }
+  .cabin { max-width: 520px; margin: 0 auto; }
+  .fuselage { justify-content: center; }
+}
+
+/* ============================================================
+   LG — 1024px. THE FLIP.
+   Two columns: cabin on the left, summary panel on the right.
+   The fixed bottom bar is gone; the panel replaces it.
+   ============================================================ */
+@media (min-width: 1024px) {
+  body { padding-bottom: 0; }
+
+  .topbar__back { display: none; }        /* desktop keeps browser history */
+  .topbar__nav {
+    display: flex;
+    gap: 22px;
+    margin-left: 28px;
+    font-size: 14px;
+  }
+  .topbar__nav a { color: var(--ink-soft); text-decoration: none; }
+  .topbar__nav a:hover { color: var(--sel); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+    gap: 28px;
+    padding: 28px var(--pad) 40px;
+  }
+
+  .bar { display: none; }
+
+  .panel {
+    display: block;
+    position: sticky;
+    top: 84px;
+    padding: 20px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .panel__title { margin: 0 0 14px; font-size: 15px; }
+
+  .panel__seats { display: flex; flex-wrap: wrap; gap: 6px; min-height: 30px; margin-bottom: 14px; }
+  .panel__seat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: var(--free);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .panel__seat button {
+    width: 14px; height: 14px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--free-line);
+    color: #fff;
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .panel__seat button:hover { background: #e05656; }
+  .panel__empty { color: var(--ink-soft); font-size: 13px; }
+
+  .panel__lines { margin: 0 0 14px; padding: 14px 0 0; border-top: 1px solid var(--line); }
+  .panel__lines div { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+  .panel__lines dt { color: var(--ink-soft); }
+  .panel__lines dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+  .panel__total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .panel__total .amount { margin-left: 0; font-size: 20px; }
+
+  .cta { width: 100%; margin-top: 16px; }
+  .panel__note { margin: 12px 0 0; font-size: 11px; color: var(--ink-soft); }
+
+  .toast { bottom: 32px; }
+}
+
+/* ============================================================
+   XL — 1280px. Wider gutter, roomier panel.
+   ============================================================ */
+@media (min-width: 1280px) {
+  :root { --seat: 46px; --pad: 40px; }
+  .layout { grid-template-columns: minmax(0, 1fr) 360px; gap: 40px; }
+}
+
+/* ============================================================
+   2XL — 1536px. Monitors and TVs: cap the line length so the
+   cabin does not drift to one edge of the screen.
+   ============================================================ */
+@media (min-width: 1536px) {
+  .layout { max-width: 1500px; }
+  .cabin { max-width: 620px; }
+  .title { font-size: 28px; }
+}
+
+/* ---------- accessibility ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

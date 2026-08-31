@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AeroPasto — Selección de asiento</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- Top bar. The back button only exists on mobile, the nav only on desktop. -->
+<header class="topbar">
+  <button class="topbar__back" id="back" aria-label="Volver" data-i18n-aria="back">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+
+  <a class="brand" href="#">
+    <svg class="brand__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 13l20-8-6 18-3.5-7L2 13z"/></svg>
+    <span>AeroPasto</span>
+  </a>
+
+  <nav class="topbar__nav" aria-label="Principal">
+    <a href="#">Check-in</a>
+    <a href="#" data-i18n="navFlights">Mis vuelos</a>
+    <a href="#" data-i18n="navHelp">Ayuda</a>
+  </nav>
+
+  <button class="lang" id="lang" aria-label="Cambiar idioma">EN</button>
+</header>
+
+<!-- Flight strip. On mobile it collapses to origin/destination only. -->
+<section class="flight" aria-label="Vuelo">
+  <div class="flight__leg">
+    <span class="flight__code">PSO</span>
+    <span class="flight__city" data-i18n="cityPso">Pasto</span>
+  </div>
+  <div class="flight__path" aria-hidden="true">
+    <span class="flight__line"></span>
+    <svg class="flight__plane" viewBox="0 0 24 24"><path d="M2 13l20-8-6 18-3.5-7L2 13z"/></svg>
+    <span class="flight__line"></span>
+  </div>
+  <div class="flight__leg">
+    <span class="flight__code">BOG</span>
+    <span class="flight__city" data-i18n="cityBog">Bogotá</span>
+  </div>
+  <dl class="flight__meta">
+    <div><dt data-i18n="metaFlight">Vuelo</dt><dd>AP 4820</dd></div>
+    <div><dt data-i18n="metaDate">Fecha</dt><dd data-i18n="metaDateVal">12 sep 2026</dd></div>
+    <div><dt data-i18n="metaBoard">Abordaje</dt><dd>06:40</dd></div>
+  </dl>
+</section>
+
+<main class="layout">
+
+  <section class="cabin-col">
+    <h1 class="title" data-i18n="title">Elige tu asiento</h1>
+    <p class="subtitle" data-i18n="subtitle">Puedes seleccionar hasta 4 puestos.</p>
+
+    <ul class="legend">
+      <li><span class="chip chip--free"></span><span data-i18n="legFree">Libre</span></li>
+      <li><span class="chip chip--premium"></span><span data-i18n="legPremium">Premium</span></li>
+      <li><span class="chip chip--sel"></span><span data-i18n="legSel">Elegido</span></li>
+      <li><span class="chip chip--busy"></span><span data-i18n="legBusy">Ocupado</span></li>
+    </ul>
+
+    <div class="fuselage">
+      <!-- The rail marker slides to the row of the last picked seat. -->
+      <div class="rail" aria-hidden="true">
+        <span class="rail__marker" id="marker"><span class="rail__row" id="markerRow">—</span></span>
+      </div>
+
+      <div class="cabin" id="cabin"></div>
+    </div>
+  </section>
+
+  <!-- Desktop-only component: below LG this panel is not rendered at all. -->
+  <aside class="panel" aria-label="Resumen">
+    <h2 class="panel__title" data-i18n="summary">Resumen</h2>
+
+    <div class="panel__seats" id="panelSeats"></div>
+
+    <dl class="panel__lines" id="panelLines"></dl>
+
+    <div class="panel__total">
+      <span data-i18n="total">Total</span>
+      <strong class="amount" id="panelTotal">$ 0</strong>
+    </div>
+
+    <button class="cta" id="ctaDesktop" disabled data-i18n="confirm">Confirmar</button>
+    <p class="panel__note" data-i18n="note">El precio incluye impuestos y tasa aeroportuaria.</p>
+  </aside>
+</main>
+
+<!-- Mobile-only component: from LG up this bar is not rendered. -->
+<div class="bar">
+  <div class="bar__left">
+    <span class="bar__count" id="barCount">0/4</span>
+    <span class="bar__seats" id="barSeats" data-i18n="none">Sin asientos</span>
+  </div>
+  <strong class="amount" id="barTotal">$ 0</strong>
+  <button class="cta cta--sm" id="ctaMobile" disabled data-i18n="confirm">Confirmar</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
