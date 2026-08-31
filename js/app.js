@@ -1,382 +1,378 @@
-/* AeroPasto — seat picker. Vanilla, no build step. */
+/* Choose Seats — vanilla JS, sin dependencias. */
 (function () {
   'use strict';
 
-  var MAX_SEATS = 4;
+  var MAX = 4;
+  var LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+  var ROWS_PER_SECTION = 8;
 
-  var CABIN = [
-    { id: 'premium', label: 'premium', rows: [1, 2, 3], letters: ['A', 'B', 'C', 'D'], aisleAfter: 1, price: 320000 },
-    { id: 'economy', label: 'economy', rows: range(4, 22), letters: ['A', 'B', 'C', 'D', 'E', 'F'], aisleAfter: 2, price: 180000 }
+  /* Posición de cada letra en la grilla. El 4 es el pasillo. */
+  var LETTER_POS = { A: 1, B: 2, C: 3, D: 5, E: 6, F: 7 };
+
+  var SECTIONS = [
+    { n: 1, key: 'business', price: 480 },
+    { n: 2, key: 'premium',  price: 320 },
+    { n: 3, key: 'economy',  price: 190 }
   ];
 
-  /* Fixed so the cabin looks the same on every reload and on the projector. */
-  var TAKEN = ['1A', '1B', '2C', '3D', '4A', '4B', '5F', '6C', '6D', '7A', '8E', '8F',
-               '9B', '10C', '10D', '11A', '12E', '13B', '13C', '14F', '16A', '16B',
-               '17D', '18E', '19C', '20A', '20F', '21B', '22D'];
+  var TOTAL_ROWS = SECTIONS.length * ROWS_PER_SECTION;
+  var ROW_X0 = 155;    /* coordenadas del viewBox del avión */
+  var ROW_X1 = 795;
 
   var I18N = {
     es: {
-      title: 'Elige tu asiento',
-      subtitle: 'Puedes seleccionar hasta 4 puestos.',
-      legFree: 'Libre', legPremium: 'Premium', legSel: 'Elegido', legBusy: 'Ocupado',
-      premium: 'Cabina Premium', economy: 'Cabina Económica',
-      summary: 'Resumen', total: 'Total', confirm: 'Confirmar',
-      none: 'Sin asientos', note: 'El precio incluye impuestos y tasa aeroportuaria.',
-      navFlights: 'Mis vuelos', navHelp: 'Ayuda',
-      cityPso: 'Pasto', cityBog: 'Bogotá',
-      metaFlight: 'Vuelo', metaDate: 'Fecha', metaDateVal: '12 sep 2026', metaBoard: 'Abordaje',
-      back: 'Volver',
-      seatOf: 'Asiento {s} — {c}',
-      swapped: 'Solo puedes llevar 4 puestos: {a} se reemplazó por {b}.',
-      done: 'Listo: {n} puesto(s) por {t}.',
-      emptyPanel: 'Todavía no has elegido nada.'
+      title: 'Elegir asientos', checkin: 'Check-in abierto', back: 'Volver',
+      legFree: 'Disponible', legBusy: 'Ocupado', legSel: 'Tu selección',
+      total: 'Total', confirm: 'Confirmar',
+      business: 'Business Class', premium: 'Premium Economy', economy: 'Económica',
+      section: 'Sección', free: 'libres', perSeat: '/ asiento',
+      empty: 'Ningún asiento elegido',
+      promo: 'Recorre la cabina en tres dimensiones antes de elegir. Solo en pantallas grandes.',
+      seat: 'Asiento {s}', taken: 'Asiento {s}, ocupado',
+      swap: 'Solo van 4 puestos: {a} salió y entró {b}.',
+      ok: 'Reservado: {s} por {t}.'
     },
     en: {
-      title: 'Pick your seat',
-      subtitle: 'You can select up to 4 seats.',
-      legFree: 'Available', legPremium: 'Premium', legSel: 'Selected', legBusy: 'Taken',
-      premium: 'Premium cabin', economy: 'Economy cabin',
-      summary: 'Summary', total: 'Total', confirm: 'Confirm',
-      none: 'No seats yet', note: 'Price includes taxes and airport fees.',
-      navFlights: 'My flights', navHelp: 'Help',
-      cityPso: 'Pasto', cityBog: 'Bogota',
-      metaFlight: 'Flight', metaDate: 'Date', metaDateVal: 'Sep 12, 2026', metaBoard: 'Boarding',
-      back: 'Back',
-      seatOf: 'Seat {s} — {c}',
-      swapped: 'Only 4 seats allowed: {a} was replaced by {b}.',
-      done: 'Done: {n} seat(s) for {t}.',
-      emptyPanel: 'Nothing selected yet.'
+      title: 'Choose Seats', checkin: 'Check-in open', back: 'Back',
+      legFree: 'Available', legBusy: 'Taken', legSel: 'Your pick',
+      total: 'Total', confirm: 'Confirm',
+      business: 'Business Class', premium: 'Premium Economy', economy: 'Economy',
+      section: 'Section', free: 'free', perSeat: '/ seat',
+      empty: 'No seats picked',
+      promo: 'Walk the cabin in 3D before you pick. Large screens only.',
+      seat: 'Seat {s}', taken: 'Seat {s}, taken',
+      swap: 'Only 4 seats: {a} was dropped for {b}.',
+      ok: 'Booked: {s} for {t}.'
     }
   };
 
   var lang = 'es';
-  var picked = [];               /* FIFO: oldest first */
-  var shownTotal = 0;            /* what the counter currently reads */
-  var counterFrame = null;
+  var active = 0;            /* índice de la sección visible */
+  var picked = [];           /* FIFO, el más viejo primero */
+  var shown = 0;             /* lo que el contador está mostrando */
+  var frame = null;
 
+  var $ = function (id) { return document.getElementById(id); };
   var el = {
-    cabin: document.getElementById('cabin'),
-    marker: document.getElementById('marker'),
-    markerRow: document.getElementById('markerRow'),
-    panelSeats: document.getElementById('panelSeats'),
-    panelLines: document.getElementById('panelLines'),
-    panelTotal: document.getElementById('panelTotal'),
-    barCount: document.getElementById('barCount'),
-    barSeats: document.getElementById('barSeats'),
-    barTotal: document.getElementById('barTotal'),
-    toast: document.getElementById('toast'),
-    lang: document.getElementById('lang'),
-    back: document.getElementById('back'),
-    ctas: [document.getElementById('ctaDesktop'), document.getElementById('ctaMobile')]
+    map: $('map'), seg: $('seg'), secName: $('secName'), secStat: $('secStat'),
+    pin: $('pin'), pinRow: $('pinRow'), zone: $('zone'), ports: $('ports'),
+    chipsDesk: $('chipsDesk'), chipsMob: $('chipsMob'),
+    totalDesk: $('totalDesk'), totalMob: $('totalMob'),
+    nDesk: $('nDesk'), nMob: $('nMob'),
+    ctaDesk: $('ctaDesk'), ctaMob: $('ctaMob'),
+    toast: $('toast'), lang: $('lang'), back: $('back')
   };
+  var svg = document.querySelector('.plane');
+  var stage = document.querySelector('.stage');
 
   /* ---------- helpers ---------- */
 
-  function range(a, b) {
+  function t(k) { return (I18N[lang] && I18N[lang][k]) || k; }
+  function fill(s, v) { return s.replace(/\{(\w+)\}/g, function (_, k) { return v[k]; }); }
+  function money(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+
+  /* Ocupados fijos: el mapa se ve igual en cada recarga y en el proyector. */
+  function isTaken(row, letter) {
+    var h = row * 374761393 + letter.charCodeAt(0) * 668265263;
+    h = (h ^ (h >>> 13)) * 1274126177;
+    return ((h ^ (h >>> 16)) >>> 0) % 100 < 30;
+  }
+
+  function sectionOfRow(row) {
+    return SECTIONS[Math.floor((row - 1) / ROWS_PER_SECTION)];
+  }
+
+  function rowsOf(index) {
+    var first = index * ROWS_PER_SECTION + 1;
     var out = [];
-    for (var i = a; i <= b; i++) out.push(i);
+    for (var i = 0; i < ROWS_PER_SECTION; i++) out.push(first + i);
     return out;
   }
 
-  function t(key) {
-    return (I18N[lang] && I18N[lang][key]) || key;
+  function seatEl(id) { return el.map.querySelector('[data-seat="' + id + '"]'); }
+
+  /* Centro de una fila, en coordenadas del viewBox. */
+  function rowX(row) {
+    return ROW_X0 + (ROW_X1 - ROW_X0) * ((row - 0.5) / TOTAL_ROWS);
   }
 
-  function fill(str, vars) {
-    return str.replace(/\{(\w+)\}/g, function (_, k) { return vars[k]; });
+  /* viewBox -> píxeles dentro del escenario, respetando el escalado del SVG. */
+  function toPx(x) {
+    var ctm = svg.getScreenCTM();
+    if (!ctm) return 0;
+    var p = svg.createSVGPoint();
+    p.x = x; p.y = 0;
+    return p.matrixTransform(ctm).x - stage.getBoundingClientRect().left;
   }
 
-  function money(n) {
-    return '$ ' + Math.round(n).toLocaleString('es-CO');
-  }
+  /* ---------- avión ---------- */
 
-  function sectionOf(id) {
-    var row = parseInt(id, 10);
-    for (var i = 0; i < CABIN.length; i++) {
-      if (CABIN[i].rows.indexOf(row) !== -1) return CABIN[i];
+  function drawPorts() {
+    var out = '';
+    for (var r = 1; r <= TOTAL_ROWS; r++) {
+      out += '<circle cx="' + rowX(r).toFixed(1) + '" cy="105" r="4"/>';
     }
-    return CABIN[CABIN.length - 1];
+    el.ports.innerHTML = out;
   }
 
-  function seatEl(id) {
-    return el.cabin.querySelector('[data-seat="' + id + '"]');
+  function placeZone() {
+    var rows = rowsOf(active);
+    var a = toPx(rowX(rows[0]) - 14);
+    var b = toPx(rowX(rows[rows.length - 1]) + 14);
+    el.zone.style.left = a + 'px';
+    el.zone.style.width = Math.max(0, b - a) + 'px';
   }
 
-  /* ---------- build the cabin ---------- */
+  /* La animación: se mueve `left`, así el trayecto se ve. */
+  function placePin(row) {
+    el.pin.style.left = toPx(rowX(row)) + 'px';
+    el.pinRow.textContent = row;
+    el.pin.classList.add('on');
+  }
 
-  function buildCabin() {
+  /* ---------- construir el mapa ---------- */
+
+  function buildMap() {
     var frag = document.createDocumentFragment();
+    var rows = rowsOf(active);
 
-    CABIN.forEach(function (section, index) {
-      if (index > 0) {
-        var curtain = document.createElement('div');
-        curtain.className = 'curtain';
-        curtain.setAttribute('aria-hidden', 'true');
-        frag.appendChild(curtain);
-      }
+    LETTERS.forEach(function (letter) {
+      var tag = document.createElement('span');
+      tag.className = 'tag tag--letter';
+      tag.style.setProperty('--lp', LETTER_POS[letter]);
+      tag.textContent = letter;
+      frag.appendChild(tag);
+    });
 
-      var label = document.createElement('h2');
-      label.className = 'section__label';
-      label.dataset.i18n = section.label;
-      label.textContent = t(section.label);
-      frag.appendChild(label);
+    rows.forEach(function (row, i) {
+      var tag = document.createElement('span');
+      tag.className = 'tag tag--row';
+      tag.style.setProperty('--rp', i + 1);
+      tag.textContent = row;
+      frag.appendChild(tag);
 
-      section.rows.forEach(function (n) {
-        var row = document.createElement('div');
-        row.className = 'row';
-        row.dataset.row = n;
+      LETTERS.forEach(function (letter) {
+        var id = row + letter;
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'seat';
+        b.dataset.seat = id;
+        b.dataset.row = row;
+        b.style.setProperty('--lp', LETTER_POS[letter]);
+        b.style.setProperty('--rp', i + 1);
+        b.textContent = id;
 
-        var num = document.createElement('span');
-        num.className = 'row__n';
-        num.textContent = n;
-        row.appendChild(num);
+        if (isTaken(row, letter)) {
+          b.disabled = true;
+          b.setAttribute('aria-label', fill(t('taken'), { s: id }));
+        } else {
+          b.setAttribute('aria-pressed', picked.indexOf(id) !== -1 ? 'true' : 'false');
+          b.setAttribute('aria-label', fill(t('seat'), { s: id }));
+        }
 
-        section.letters.forEach(function (letter, i) {
-          var id = n + letter;
-          var seat = document.createElement('button');
-          seat.type = 'button';
-          seat.className = 'seat' + (section.id === 'premium' ? ' seat--premium' : '');
-          seat.dataset.seat = id;
-          seat.dataset.row = n;
-          seat.textContent = id;
-          seat.setAttribute('aria-pressed', 'false');
-          seat.setAttribute('aria-label', fill(t('seatOf'), { s: id, c: t(section.label) }));
-
-          if (TAKEN.indexOf(id) !== -1) {
-            seat.disabled = true;
-            seat.setAttribute('aria-label', fill(t('seatOf'), { s: id, c: t(section.label) }) + ' — ' + t('legBusy'));
-          }
-
-          row.appendChild(seat);
-
-          if (i === section.aisleAfter) {
-            var aisle = document.createElement('span');
-            aisle.className = 'row__aisle';
-            aisle.setAttribute('aria-hidden', 'true');
-            row.appendChild(aisle);
-          }
-        });
-
-        frag.appendChild(row);
+        frag.appendChild(b);
       });
     });
 
-    el.cabin.innerHTML = '';
-    el.cabin.appendChild(frag);
+    el.map.innerHTML = '';
+    el.map.appendChild(frag);
   }
 
-  /* ---------- selection: max 4, the 5th evicts the oldest ---------- */
+  function freeCount() {
+    var n = 0;
+    rowsOf(active).forEach(function (row) {
+      LETTERS.forEach(function (letter) { if (!isTaken(row, letter)) n++; });
+    });
+    return n;
+  }
+
+  /* ---------- secciones ---------- */
+
+  function buildSeg() {
+    el.seg.innerHTML = '';
+    SECTIONS.forEach(function (s, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'seg__b';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', i === active ? 'true' : 'false');
+      b.textContent = s.n;
+      b.addEventListener('click', function () { show(i); });
+      el.seg.appendChild(b);
+    });
+  }
+
+  function show(i) {
+    active = i;
+    [].forEach.call(el.seg.children, function (b, k) {
+      b.setAttribute('aria-selected', k === i ? 'true' : 'false');
+    });
+    buildMap();
+    renderHead();
+    placeZone();
+  }
+
+  function renderHead() {
+    var s = SECTIONS[active];
+    el.secName.textContent = t('section') + ' ' + s.n + ' (' + t(s.key) + ')';
+    el.secStat.textContent = freeCount() + ' ' + t('free') + ' · ' + money(s.price) + ' ' + t('perSeat');
+  }
+
+  /* ---------- selección: 4 máximo, el quinto saca al más viejo ---------- */
 
   function toggle(id) {
     var at = picked.indexOf(id);
 
     if (at !== -1) {
       picked.splice(at, 1);
-      paint(id, false);
+      mark(id, false);
       render();
       return;
     }
 
-    var evicted = null;
-    if (picked.length >= MAX_SEATS) {
-      evicted = picked.shift();
-      paint(evicted, false);
-      bump(evicted, 'is-drop');
+    var out = null;
+    if (picked.length >= MAX) {
+      out = picked.shift();
+      mark(out, false);
+      bump(out, 'drop');
     }
 
     picked.push(id);
-    paint(id, true);
-    bump(id, 'is-pop');
-    moveMarker(id);
+    mark(id, true);
+    bump(id, 'pop');
+    placePin(parseInt(id, 10));
     render();
 
-    if (evicted) {
-      toast(fill(t('swapped'), { a: evicted, b: id }));
-    }
+    if (out) toast(fill(t('swap'), { a: out, b: id }));
   }
 
-  function paint(id, on) {
-    var seat = seatEl(id);
-    if (seat) seat.setAttribute('aria-pressed', on ? 'true' : 'false');
+  function mark(id, on) {
+    var s = seatEl(id);
+    if (s) s.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
 
   function bump(id, cls) {
-    var seat = seatEl(id);
-    if (!seat) return;
-    seat.classList.remove('is-pop', 'is-drop');
-    void seat.offsetWidth;              /* restart the animation */
-    seat.classList.add(cls);
+    var s = seatEl(id);
+    if (!s) return;
+    s.classList.remove('pop', 'drop');
+    void s.offsetWidth;
+    s.classList.add(cls);
   }
 
-  /* ---------- the plane animation: the marker travels to the row ---------- */
-
-  function moveMarker(id) {
-    var seat = seatEl(id);
-    if (!seat) return;
-
-    var row = seat.closest('.row');
-    var rail = el.marker.parentNode;
-    var top = row.offsetTop + (row.offsetHeight / 2) - rail.offsetTop;
-
-    /* Setting `top` (not translate) lets the CSS transition run the trip,
-       so going from row 2 to row 3 slides instead of jumping. */
-    el.marker.style.top = top + 'px';
-    el.markerRow.textContent = seat.dataset.row;
-    el.marker.classList.add('is-on');
-  }
-
-  function resetMarker() {
-    el.marker.classList.remove('is-on');
-    el.markerRow.textContent = '—';
-  }
-
-  /* ---------- the total counter counts, it does not jump ---------- */
+  /* ---------- el total cuenta, no salta ---------- */
 
   function countTo(target) {
-    if (counterFrame) cancelAnimationFrame(counterFrame);
+    if (frame) cancelAnimationFrame(frame);
 
-    var from = shownTotal;
-    var delta = target - from;
-    if (delta === 0) return;
+    var from = shown;
+    var d = target - from;
+    if (d === 0) return;
 
-    /* Background tabs get no animation frames at all, so counting there
-       would leave the amount frozen at a stale value. Land it directly. */
+    /* Una pestaña en segundo plano no recibe frames: ahí se pone el valor final. */
     if (document.hidden) {
-      shownTotal = target;
-      el.panelTotal.textContent = money(target);
-      el.barTotal.textContent = money(target);
+      shown = target;
+      el.totalDesk.textContent = money(target);
+      el.totalMob.textContent = money(target);
       return;
     }
 
-    var start = performance.now();
-    var ms = 480;
+    var t0 = performance.now();
 
-    function step(now) {
-      var p = Math.min(1, (now - start) / ms);
-      var eased = 1 - Math.pow(1 - p, 3);
-      shownTotal = from + delta * eased;
-
-      var text = money(shownTotal);
-      el.panelTotal.textContent = text;
-      el.barTotal.textContent = text;
-
-      if (p < 1) {
-        counterFrame = requestAnimationFrame(step);
-      } else {
-        shownTotal = target;
-        counterFrame = null;
-      }
-    }
-
-    counterFrame = requestAnimationFrame(step);
+    frame = requestAnimationFrame(function step(now) {
+      var p = Math.min(1, (now - t0) / 480);
+      shown = from + d * (1 - Math.pow(1 - p, 3));
+      el.totalDesk.textContent = money(shown);
+      el.totalMob.textContent = money(shown);
+      if (p < 1) frame = requestAnimationFrame(step);
+      else { shown = target; frame = null; }
+    });
   }
 
-  /* ---------- render both summaries ---------- */
+  /* ---------- fichas y totales ---------- */
 
-  function totals() {
-    var byClass = {};
-    var sum = 0;
+  function sum() {
+    return picked.reduce(function (a, id) {
+      return a + sectionOfRow(parseInt(id, 10)).price;
+    }, 0);
+  }
+
+  function chips(box, dark) {
+    box.innerHTML = '';
+
+    if (!picked.length) {
+      var e = document.createElement('span');
+      e.className = 'chip chip--empty' + (dark ? ' chip--dark' : '');
+      e.textContent = t('empty');
+      box.appendChild(e);
+      return;
+    }
 
     picked.forEach(function (id) {
-      var s = sectionOf(id);
-      byClass[s.label] = byClass[s.label] || { count: 0, amount: 0 };
-      byClass[s.label].count++;
-      byClass[s.label].amount += s.price;
-      sum += s.price;
-    });
+      var c = document.createElement('span');
+      c.className = 'chip' + (dark ? ' chip--dark' : '');
+      c.textContent = id;
 
-    return { byClass: byClass, sum: sum };
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.textContent = '×';
+      x.setAttribute('aria-label', id);
+      x.addEventListener('click', function () { toggle(id); });
+      c.appendChild(x);
+
+      box.appendChild(c);
+    });
   }
 
   function render() {
-    var sums = totals();
+    chips(el.chipsDesk, false);
+    chips(el.chipsMob, true);
 
-    /* mobile bar */
-    el.barCount.textContent = picked.length + '/' + MAX_SEATS;
-    el.barSeats.textContent = picked.length ? picked.join(' · ') : t('none');
+    el.nDesk.textContent = picked.length;
+    el.nMob.textContent = picked.length;
+    el.ctaDesk.disabled = picked.length === 0;
+    el.ctaMob.disabled = picked.length === 0;
 
-    /* desktop panel */
-    el.panelSeats.innerHTML = '';
     if (!picked.length) {
-      var empty = document.createElement('p');
-      empty.className = 'panel__empty';
-      empty.textContent = t('emptyPanel');
-      el.panelSeats.appendChild(empty);
-    } else {
-      picked.forEach(function (id) {
-        var chip = document.createElement('span');
-        chip.className = 'panel__seat';
-        chip.textContent = id;
-
-        var x = document.createElement('button');
-        x.type = 'button';
-        x.textContent = '×';
-        x.setAttribute('aria-label', id);
-        x.addEventListener('click', function () { toggle(id); });
-        chip.appendChild(x);
-
-        el.panelSeats.appendChild(chip);
-      });
+      el.pin.classList.remove('on');
     }
 
-    el.panelLines.innerHTML = '';
-    Object.keys(sums.byClass).forEach(function (key) {
-      var line = sums.byClass[key];
-      var wrap = document.createElement('div');
-      var dt = document.createElement('dt');
-      dt.textContent = t(key) + ' × ' + line.count;
-      var dd = document.createElement('dd');
-      dd.textContent = money(line.amount);
-      wrap.appendChild(dt);
-      wrap.appendChild(dd);
-      el.panelLines.appendChild(wrap);
-    });
-
-    el.ctas.forEach(function (b) { if (b) b.disabled = picked.length === 0; });
-
-    if (!picked.length) resetMarker();
-
-    countTo(sums.sum);
+    countTo(sum());
   }
 
-  /* ---------- toast ---------- */
+  /* ---------- aviso ---------- */
 
-  var toastTimer = null;
+  var timer = null;
   function toast(msg) {
     el.toast.textContent = msg;
-    el.toast.classList.add('is-on');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.toast.classList.remove('is-on'); }, 2600);
+    el.toast.classList.add('on');
+    clearTimeout(timer);
+    timer = setTimeout(function () { el.toast.classList.remove('on'); }, 2800);
   }
 
-  /* ---------- language ---------- */
+  /* ---------- idioma ---------- */
 
   function applyLang() {
     document.documentElement.lang = lang;
     el.lang.textContent = lang === 'es' ? 'EN' : 'ES';
+    document.title = t('title') + ' — AV 8420';
 
-    document.querySelectorAll('[data-i18n]').forEach(function (node) {
-      node.textContent = t(node.dataset.i18n);
+    document.querySelectorAll('[data-i18n]').forEach(function (n) {
+      n.textContent = t(n.dataset.i18n);
     });
-    document.querySelectorAll('[data-i18n-aria]').forEach(function (node) {
-      node.setAttribute('aria-label', t(node.dataset.i18nAria));
-    });
-
-    /* Seat labels carry the cabin name, so they need re-writing too. */
-    el.cabin.querySelectorAll('.seat').forEach(function (seat) {
-      var id = seat.dataset.seat;
-      var label = fill(t('seatOf'), { s: id, c: t(sectionOf(id).label) });
-      seat.setAttribute('aria-label', seat.disabled ? label + ' — ' + t('legBusy') : label);
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (n) {
+      n.setAttribute('aria-label', t(n.dataset.i18nAria));
     });
 
+    buildMap();
+    renderHead();
     render();
   }
 
-  /* ---------- wiring ---------- */
+  /* ---------- cableado ---------- */
 
-  el.cabin.addEventListener('click', function (e) {
-    var seat = e.target.closest('.seat');
-    if (seat && !seat.disabled) toggle(seat.dataset.seat);
+  el.map.addEventListener('click', function (e) {
+    var s = e.target.closest('.seat');
+    if (s && !s.disabled) toggle(s.dataset.seat);
   });
 
   el.lang.addEventListener('click', function () {
@@ -386,22 +382,26 @@
 
   el.back.addEventListener('click', function () { history.back(); });
 
-  el.ctas.forEach(function (b) {
-    if (!b) return;
+  [el.ctaDesk, el.ctaMob].forEach(function (b) {
     b.addEventListener('click', function () {
-      if (!picked.length) return;
-      toast(fill(t('done'), { n: picked.length, t: money(totals().sum) }));
+      if (picked.length) toast(fill(t('ok'), { s: picked.join(', '), t: money(sum()) }));
     });
   });
 
-  /* The marker is positioned in pixels, so it has to follow a resize. */
-  var resizeTimer = null;
+  /* El pin y la franja están en píxeles: tienen que seguir al resize. */
+  var rt = null;
   window.addEventListener('resize', function () {
-    if (!picked.length) return;
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () { moveMarker(picked[picked.length - 1]); }, 120);
+    clearTimeout(rt);
+    rt = setTimeout(function () {
+      placeZone();
+      if (picked.length) placePin(parseInt(picked[picked.length - 1], 10));
+    }, 120);
   });
 
-  buildCabin();
+  drawPorts();
+  buildSeg();
+  buildMap();
   applyLang();
+  requestAnimationFrame(placeZone);
+  setTimeout(placeZone, 120);   /* por si el SVG aún no tiene tamaño */
 })();
