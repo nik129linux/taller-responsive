@@ -25,7 +25,8 @@ REQUISITOS
      fila elegida (de la 2 a la 3 hace el recorrido, no aparece de golpe).
   7. Niveles de cabina: Premium adelante, separado por cortina.
   8. Al menos un componente que en móvil NO se renderiza y en web sí, y otro
-     al revés, controlados por media query.
+     al revés, controlados por media query. En la maqueta proyectada son la
+     tarjeta 3D Rendering (solo web) y la hoja oscura de abajo (solo móvil).
   9. Los puestos seleccionados se muestran y el valor se va sumando.
  10. Botón de confirmar.
  11. El encabezado cambia: en móvil hay botón de volver, en web aparece la
@@ -33,9 +34,20 @@ REQUISITOS
  12. Español por defecto con toggle a inglés (requisito permanente de la
      materia desde el 2026-08-24).
 
+MAQUETA DE REFERENCIA (proyectada en clase)
+  Dos artboards del mismo diseño, WEB 1280 y MOBILE 390:
+  - Acento violeta, botón de confirmar verde lima, negro para fichas y hoja.
+  - Metadatos en tipografía monoespaciada.
+  - El asiento elegido muestra EL ORDEN en que se eligió (1, 2, 3, 4).
+  - Web: avión sobre panel punteado con recuadro de sección y etiqueta
+    BUSINESS, tarjeta negra 3D Rendering a la izquierda, números de fila
+    arriba y letras al costado.
+  - Móvil: el número de fila va EN EL PASILLO, las letras arriba, y la hoja
+    inferior oscura tiene dos filas (fichas / total + confirmar).
+
 RESTRICCIONES
-  - Vanilla HTML/CSS/JS, sin build tools, sin frameworks.
-  - Un solo index.html + css + js.
+  - Tailwind por CDN, que es el recurso de la presentación de la materia.
+  - Un solo index.html + css + js. Sin build tools.
 
 ENTREGA
   Repositorio de GitHub PÚBLICO (el profesor descontó a quien lo dejó privado).

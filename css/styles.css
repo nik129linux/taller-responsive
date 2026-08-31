@@ -1,59 +1,80 @@
 /* ==========================================================================
    Choose Seats — lo que Tailwind no cubre.
 
-   El grueso del responsive vive en las clases del HTML (sm: md: bp: lg: xl:).
-   Acá quedan tres cosas: el avión, las animaciones, y el mapa de asientos,
-   que necesita media queries escritas a mano porque lo que cambia entre móvil
-   y web no es un tamaño sino la DIRECCIÓN de la grilla.
+   El responsive de la maqueta vive en las clases del HTML (sm: bp: lg: xl:).
+   Acá quedan el avión, las animaciones y el mapa de asientos, que necesita
+   media queries a mano porque entre móvil y web no cambia un tamaño: cambia
+   la DIRECCIÓN de la grilla y el lugar de los rótulos.
    ========================================================================== */
 
 :root {
-  --ink: #0F1116;
-  --muted: #7B8598;
-  --hair: #DDE4EF;
-  --free: #D9E1EE;
-  --busy: #A8B3C6;
-  --pick: #2733F0;
-  --lime: #C2F24B;
-  --night: #14171F;
+  --ink:   #0E0E11;
+  --muted: #9A9AA2;
+  --hair:  #E9E9EC;
+  --soft:  #F4F4F6;
+  --pick:  #5B4BF5;
+  --lime:  #C9F24D;
+  --night: #0D0D0F;
 }
 
 /* ---------- avión ---------- */
 
-.stage { position: relative; }
+.hero {
+  background:
+    radial-gradient(circle, #DDDDE2 1px, transparent 1px) 0 0 / 13px 13px,
+    var(--soft);
+}
 
-.plane__body { fill: #E4EAF4; }
-.plane__nose { fill: #D5DEEC; }
-.plane__wing { fill: #EDF1F8; }
-.plane__ports circle { fill: #C6D0E1; }
+.plane__body   { fill: url(#body); }
+.plane__nose   { fill: url(#nose); }
+.plane__shadow path { fill: #E4E4E9; }
+.plane__ports circle { fill: #D5D5DB; }
 
-/* La franja de la sección activa. Se desliza al cambiar de sección. */
+/* Recuadro de la sección activa. Se desliza al cambiar de sección. */
 .zone {
   position: absolute;
-  top: 26%;
-  height: 48%;
-  border-radius: 10px;
-  border: 1.5px solid rgba(39, 51, 240, .35);
-  background: rgba(39, 51, 240, .08);
+  top: 22%;
+  height: 56%;
+  border-radius: 12px;
+  border: 1.5px solid rgba(14, 14, 17, .55);
   transition: left .5s cubic-bezier(.4, 0, .2, 1), width .5s cubic-bezier(.4, 0, .2, 1);
   pointer-events: none;
 }
 
-/* El pin recorre el fuselaje hasta la fila elegida.
-   Se anima `left`, no se reposiciona de golpe: de la fila 2 a la 5 se ve el viaje. */
+.zone__tag {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--night);
+  color: #fff;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  white-space: nowrap;
+}
+
+/* Solo web: en móvil la etiqueta no cabe sobre el recuadro. */
+@media (max-width: 1023px) { .zone__tag { display: none; } }
+
+/* La animación del avión: se mueve `left`, así el trayecto de una fila a otra
+   se ve. No se reposiciona de golpe en el destino. */
 .pin {
   position: absolute;
   top: 50%;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--pick);
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(39, 51, 240, .45);
+  box-shadow: 0 3px 12px rgba(91, 75, 245, .5);
   transform: translate(-50%, -50%);
   opacity: 0;
   transition: left .55s cubic-bezier(.34, 1.3, .5, 1), opacity .25s ease;
@@ -65,7 +86,7 @@
 
 .seg__b {
   flex: 1;
-  padding: 9px 0;
+  padding: 10px 0;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -79,133 +100,150 @@
 .seg__b[aria-selected="true"] { background: var(--night); color: #fff; }
 
 @media (min-width: 1024px) {
-  .seg__b { flex: none; min-width: 92px; }
+  .seg__b { flex: none; min-width: 104px; padding: 11px 0; }
 }
 
 /* ---------- pared del fuselaje ---------- */
 
 .skin {
-  width: 14px;
+  width: 22px;
   flex: none;
-  border-radius: 6px;
-  background: repeating-linear-gradient(-45deg, var(--hair) 0 2px, transparent 2px 7px);
+  border-radius: 8px;
+  background: repeating-linear-gradient(-58deg, #DFDFE4 0 2px, transparent 2px 8px);
 }
 
 /* ==========================================================================
    MAPA DE ASIENTOS — el corazón del taller.
 
-   Cada asiento sabe dos cosas: en qué fila del avión está (--rp, 1..8) y en
-   qué letra (--lp: A=1 B=2 C=3, 4 es el pasillo, D=5 E=6 F=7).
+   Cada asiento sabe dos cosas: la letra (--lp: A=1 B=2 C=3, 4 es el pasillo,
+   D=5 E=6 F=7) y la fila del avión (--rp, 1..8).
 
-   MÓVIL: las filas bajan. 6 asientos de ancho, 8 filas de alto.
-          Es el "fila, fila, fila" del móvil: no hay ancho para más.
-   WEB:   la grilla se TRANSPONE. Las filas del avión pasan a ser columnas,
-          las letras pasan a ser filas, y el mapa queda acostado como el avión
-          de arriba. Mismo HTML, misma data, cero JavaScript: solo cambian los
-          ejes de la grilla.
+   MÓVIL: las filas BAJAN. Seis asientos de ancho, y el número de fila va en el
+          pasillo, que es el único hueco que sobra. Es el "fila, fila, fila".
+   WEB:   la grilla se TRANSPONE. Las filas del avión pasan al eje horizontal y
+          el mapa queda acostado como el avión de arriba; los números suben al
+          borde superior y las letras se van al costado.
+
+   Mismo HTML, misma data, cero JavaScript: solo cambian los ejes.
    ========================================================================== */
 
 .map {
   display: grid;
   gap: 6px;
-  /* 22px de etiquetas + A B C + pasillo + D E F */
-  grid-template-columns: 22px repeat(3, minmax(0, 1fr)) 14px repeat(3, minmax(0, 1fr));
-  grid-template-rows: 16px repeat(8, minmax(0, auto));
-  max-width: 380px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 34px repeat(3, minmax(0, 1fr));
+  grid-template-rows: 18px repeat(8, minmax(0, auto));
+  max-width: 400px;
   margin-inline: auto;
 }
 
 .seat {
-  grid-column: calc(var(--lp) + 1);
+  grid-column: var(--lp);
   grid-row: calc(var(--rp) + 1);
+  display: grid;
+  place-items: center;
   aspect-ratio: 1;
   min-width: 0;
   padding: 0;
   border: 0;
-  border-radius: 7px;
-  background: var(--free);
-  color: transparent;
-  font: inherit;
-  font-size: 0;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #EFEFF2, #E1E1E7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9);
   cursor: pointer;
-  transition: background .18s ease, transform .18s ease;
+  transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
 }
-.seat:hover:not(:disabled) { background: #C6D2E4; transform: translateY(-2px); }
+.seat:hover:not(:disabled) { transform: translateY(-2px); }
 .seat:focus-visible { outline: 2px solid var(--pick); outline-offset: 2px; }
-.seat:disabled { background: var(--busy); cursor: not-allowed; }
-.seat[aria-pressed="true"] { background: var(--pick); }
+.seat:disabled { background: linear-gradient(180deg, #CBCBD1, #BDBDC5); cursor: not-allowed; }
 
-/* La etiqueta de la fila y la de la letra son el mismo componente:
-   lo único que cambia entre móvil y web es en qué eje se acuestan. */
+.seat[aria-pressed="true"] {
+  background: linear-gradient(180deg, #6C5DF7, #4E3DF0);
+  box-shadow: 0 3px 10px rgba(91, 75, 245, .35);
+}
+
+/* El asiento elegido muestra en qué orden se eligió. */
+.seat__n {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+.seat[aria-pressed="true"] .seat__n { opacity: 1; }
+
+/* El rótulo de la fila y el de la letra son el mismo componente: lo único que
+   cambia entre móvil y web es en qué eje se acuestan. */
 .tag {
   display: grid;
   place-items: center;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 10px;
-  font-weight: 600;
   color: var(--muted);
 }
-.tag--letter { grid-row: 1; grid-column: calc(var(--lp) + 1); }
-.tag--row    { grid-column: 1; grid-row: calc(var(--rp) + 1); }
+.tag--letter { grid-row: 1; grid-column: var(--lp); }
+.tag--row    { grid-column: 4; grid-row: calc(var(--rp) + 1); }
 
-@keyframes pop  { 0% { transform: scale(1); } 45% { transform: scale(1.3); }  100% { transform: scale(1); } }
-@keyframes drop { 0% { transform: scale(1); } 50% { transform: scale(.7) rotate(-8deg); } 100% { transform: scale(1); } }
+@keyframes pop  { 0% { transform: scale(1); } 45% { transform: scale(1.28); } 100% { transform: scale(1); } }
+@keyframes drop { 0% { transform: scale(1); } 50% { transform: scale(.72) rotate(-8deg); } 100% { transform: scale(1); } }
 .seat.pop  { animation: pop .34s ease; }
 .seat.drop { animation: drop .34s ease; }
 
-/* SM — hay algo más de ancho: se despega un poco. */
+/* SM — 640px: hay algo más de ancho, se despega. */
 @media (min-width: 640px) {
-  .map { gap: 8px; }
+  .map { gap: 8px; max-width: 440px; }
 }
 
-/* BP — 900px, el punto intermedio propio. Todavía no gira la grilla, pero ya
-   hay ancho para asientos más grandes sin que el mapa se deforme. */
+/* BP — 900px, el intermedio propio. Todavía no gira, pero el mapa deja de
+   estirarse: a 899px los asientos ya empezaban a verse deformes. */
 @media (min-width: 900px) {
-  .map { max-width: 440px; }
+  .map { max-width: 470px; }
 }
 
-/* LG — 1024px. Acá se transpone: las filas del avión pasan al eje X. */
+/* LG — 1024px. EL GIRO: las filas del avión pasan al eje X y los rótulos
+   cambian de costado. */
 @media (min-width: 1024px) {
   .map {
     max-width: none;
-    justify-content: center;
-    grid-template-columns: 22px repeat(8, 38px);
-    grid-template-rows: 16px repeat(3, 38px) 14px repeat(3, 38px);
+    margin-inline: 0;
+    justify-content: start;
+    gap: 7px;
+    grid-template-columns: 26px repeat(8, 34px);
+    grid-template-rows: 18px repeat(3, 34px) 14px repeat(3, 34px);
   }
-  .seat { aspect-ratio: auto; }
-  .seat       { grid-column: calc(var(--rp) + 1); grid-row: calc(var(--lp) + 1); }
+  .seat        { grid-column: calc(var(--rp) + 1); grid-row: calc(var(--lp) + 1); aspect-ratio: auto; }
   .tag--letter { grid-column: 1; grid-row: calc(var(--lp) + 1); }
   .tag--row    { grid-row: 1; grid-column: calc(var(--rp) + 1); }
 }
 
-/* XL — más aire entre asientos, la pantalla lo permite. */
+/* XL — 1280px: asientos y separación más grandes. */
 @media (min-width: 1280px) {
   .map {
-    gap: 10px;
-    grid-template-columns: 22px repeat(8, 46px);
-    grid-template-rows: 16px repeat(3, 46px) 16px repeat(3, 46px);
+    gap: 9px;
+    grid-template-columns: 28px repeat(8, 40px);
+    grid-template-rows: 20px repeat(3, 40px) 16px repeat(3, 40px);
   }
-  .seat { border-radius: 9px; }
+  .seat { border-radius: 10px; }
+  .seat__n { font-size: 12px; }
 }
 
-/* 2XL — monitor o televisor: el asiento crece, el mapa sigue centrado. */
+/* 2XL — 1536px: monitor grande o televisor. */
 @media (min-width: 1536px) {
   .map {
-    gap: 12px;
-    grid-template-columns: 24px repeat(8, 54px);
-    grid-template-rows: 18px repeat(3, 54px) 18px repeat(3, 54px);
+    gap: 11px;
+    grid-template-columns: 30px repeat(8, 48px);
+    grid-template-rows: 22px repeat(3, 48px) 18px repeat(3, 48px);
   }
 }
 
-/* ---------- fichas de los asientos elegidos ---------- */
+/* ---------- fichas ---------- */
 
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px 6px 11px;
+  gap: 8px;
+  padding: 7px 8px 7px 13px;
   border-radius: 999px;
-  background: var(--free);
-  color: var(--ink);
+  background: var(--night);
+  color: #fff;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -213,30 +251,21 @@
 .chip button {
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgba(15, 17, 22, .16);
+  background: rgba(255, 255, 255, .18);
   color: #fff;
   font-size: 11px;
   line-height: 1;
   cursor: pointer;
+  transition: background .16s ease;
 }
 .chip button:hover { background: #E0574F; }
 
-.chip--dark {
-  background: rgba(255, 255, 255, .12);
-  color: #fff;
-  padding: 5px 6px 5px 9px;
-  font-size: 11px;
-}
-.chip--dark button { background: rgba(255, 255, 255, .25); width: 14px; height: 14px; font-size: 10px; }
-
-/* La fila de fichas se desliza si no caben; la barra de scroll estorba. */
-.chips-scroll { scrollbar-width: none; }
-.chips-scroll::-webkit-scrollbar { display: none; }
+.chip--dark { background: rgba(255, 255, 255, .1); }
 
 .chip--empty {
   background: transparent;
@@ -244,15 +273,40 @@
   font-weight: 400;
   padding-left: 0;
 }
-.chip--dark.chip--empty { color: rgba(255, 255, 255, .45); }
+.chip--dark.chip--empty { color: rgba(255, 255, 255, .4); }
+
+/* La fila de fichas se desliza si no caben; la barra de scroll estorba. */
+.chips-scroll { scrollbar-width: none; }
+.chips-scroll::-webkit-scrollbar { display: none; }
+
+/* ---------- hoja móvil ---------- */
+
+.sheet {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 40;
+  padding-top: 10px;
+  border-radius: 26px 26px 0 0;
+  background: var(--night);
+  box-shadow: 0 -10px 34px rgba(0, 0, 0, .18);
+}
+
+.sheet__grab {
+  display: block;
+  width: 38px;
+  height: 4px;
+  margin: 0 auto 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .22);
+}
 
 /* ---------- aviso ---------- */
 
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 100px;
-  z-index: 40;
+  bottom: 176px;
+  z-index: 50;
   max-width: calc(100vw - 32px);
   padding: 11px 18px;
   border-radius: 999px;

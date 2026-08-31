@@ -66,14 +66,25 @@ cosas? Con las media queries."*
 | Leyenda (disponible / ocupado / selección) | no se renderiza | desde `lg` |
 | Pill *Check-in abierto* | no se renderiza | desde `lg` |
 | Rótulo `SECTIONS` | no se renderiza | desde `lg` |
+| Botones flotantes del avión | no se renderiza | desde `lg` |
+| Etiqueta `BUSINESS` sobre el recuadro | no se renderiza | desde `lg` |
+| `A320NEO` en el subtítulo | no se renderiza | desde `lg` |
 | Hoja oscura fija con total y confirmar | visible | **no se renderiza** desde `lg` |
 | Flecha de volver | visible | **no se renderiza** desde `lg` |
 | Pie del panel con fichas y total | no se renderiza | desde `lg` |
 
+Y dos que no desaparecen, cambian de forma:
+
+| | Móvil | Web |
+|---|---|---|
+| Título de la sección | `Premium · Sec 2` | `Section 2 (Premium Economy)` |
+| Número de fila | **en el pasillo** | en el borde superior |
+
 ## Comportamiento
 
-- **Tres secciones** (Business $480, Premium Economy $320, Económica $190),
+- **Tres secciones** (Business $480, Premium Economy $260, Económica $160),
   8 filas de 6 asientos cada una.
+- **El asiento elegido muestra el orden** en que se eligió: 1, 2, 3, 4.
 - **Máximo 4 puestos.** El quinto reemplaza al más antiguo y avisa cuál salió.
 - **El total cuenta, no salta.** `requestAnimationFrame` con easing cúbico.
 - **El avión se anima.** El pin recorre el fuselaje hasta la fila elegida y la

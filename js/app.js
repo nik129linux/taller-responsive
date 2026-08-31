@@ -4,30 +4,30 @@
 
   var MAX = 4;
   var LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
-  var ROWS_PER_SECTION = 8;
+  var ROWS = 8;
 
   /* Posición de cada letra en la grilla. El 4 es el pasillo. */
-  var LETTER_POS = { A: 1, B: 2, C: 3, D: 5, E: 6, F: 7 };
+  var LP = { A: 1, B: 2, C: 3, D: 5, E: 6, F: 7 };
 
   var SECTIONS = [
     { n: 1, key: 'business', price: 480 },
-    { n: 2, key: 'premium',  price: 320 },
-    { n: 3, key: 'economy',  price: 190 }
+    { n: 2, key: 'premium',  price: 260 },
+    { n: 3, key: 'economy',  price: 160 }
   ];
 
-  var TOTAL_ROWS = SECTIONS.length * ROWS_PER_SECTION;
-  var ROW_X0 = 155;    /* coordenadas del viewBox del avión */
-  var ROW_X1 = 795;
+  var TOTAL_ROWS = SECTIONS.length * ROWS;
+  var X0 = 170, X1 = 900;     /* extremos de la cabina en el viewBox del avión */
 
   var I18N = {
     es: {
-      title: 'Elegir asientos', checkin: 'Check-in abierto', back: 'Volver',
+      title: 'Choose Seats', checkin: 'Check-in abierto', back: 'Volver',
       legFree: 'Disponible', legBusy: 'Ocupado', legSel: 'Tu selección',
-      total: 'Total', confirm: 'Confirmar',
+      total: 'TOTAL', confirm: 'Confirmar',
       business: 'Business Class', premium: 'Premium Economy', economy: 'Económica',
-      section: 'Sección', free: 'libres', perSeat: '/ asiento',
+      shortBusiness: 'Business', shortPremium: 'Premium', shortEconomy: 'Económica',
+      section: 'Section', sec: 'Sec', free: 'libres', per: '/ asiento',
       empty: 'Ningún asiento elegido',
-      promo: 'Recorre la cabina en tres dimensiones antes de elegir. Solo en pantallas grandes.',
+      promo: 'Recorre la cabina de tu avión con visualización 3D y siente lo que te espera a bordo.',
       seat: 'Asiento {s}', taken: 'Asiento {s}, ocupado',
       swap: 'Solo van 4 puestos: {a} salió y entró {b}.',
       ok: 'Reservado: {s} por {t}.'
@@ -35,11 +35,12 @@
     en: {
       title: 'Choose Seats', checkin: 'Check-in open', back: 'Back',
       legFree: 'Available', legBusy: 'Taken', legSel: 'Your pick',
-      total: 'Total', confirm: 'Confirm',
+      total: 'TOTAL', confirm: 'Confirm',
       business: 'Business Class', premium: 'Premium Economy', economy: 'Economy',
-      section: 'Section', free: 'free', perSeat: '/ seat',
+      shortBusiness: 'Business', shortPremium: 'Premium', shortEconomy: 'Economy',
+      section: 'Section', sec: 'Sec', free: 'free', per: '/ seat',
       empty: 'No seats picked',
-      promo: 'Walk the cabin in 3D before you pick. Large screens only.',
+      promo: 'Walk your cabin in 3D and feel what is waiting for you on board.',
       seat: 'Seat {s}', taken: 'Seat {s}, taken',
       swap: 'Only 4 seats: {a} was dropped for {b}.',
       ok: 'Booked: {s} for {t}.'
@@ -47,19 +48,18 @@
   };
 
   var lang = 'es';
-  var active = 0;            /* índice de la sección visible */
-  var picked = [];           /* FIFO, el más viejo primero */
-  var shown = 0;             /* lo que el contador está mostrando */
+  var active = 0;
+  var picked = [];        /* FIFO: el más viejo primero */
+  var shown = 0;
   var frame = null;
 
   var $ = function (id) { return document.getElementById(id); };
   var el = {
-    map: $('map'), seg: $('seg'), secName: $('secName'), secStat: $('secStat'),
-    pin: $('pin'), pinRow: $('pinRow'), zone: $('zone'), ports: $('ports'),
+    map: $('map'), seg: $('seg'), secShort: $('secShort'), secLong: $('secLong'), secStat: $('secStat'),
+    pin: $('pin'), pinRow: $('pinRow'), zone: $('zone'), zoneTag: $('zoneTag'), ports: $('ports'),
     chipsDesk: $('chipsDesk'), chipsMob: $('chipsMob'),
     totalDesk: $('totalDesk'), totalMob: $('totalMob'),
-    nDesk: $('nDesk'), nMob: $('nMob'),
-    ctaDesk: $('ctaDesk'), ctaMob: $('ctaMob'),
+    nDesk: $('nDesk'), nMob: $('nMob'), ctaDesk: $('ctaDesk'), ctaMob: $('ctaMob'),
     toast: $('toast'), lang: $('lang'), back: $('back')
   };
   var svg = document.querySelector('.plane');
@@ -70,33 +70,28 @@
   function t(k) { return (I18N[lang] && I18N[lang][k]) || k; }
   function fill(s, v) { return s.replace(/\{(\w+)\}/g, function (_, k) { return v[k]; }); }
   function money(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
   /* Ocupados fijos: el mapa se ve igual en cada recarga y en el proyector. */
   function isTaken(row, letter) {
     var h = row * 374761393 + letter.charCodeAt(0) * 668265263;
     h = (h ^ (h >>> 13)) * 1274126177;
-    return ((h ^ (h >>> 16)) >>> 0) % 100 < 30;
+    return ((h ^ (h >>> 16)) >>> 0) % 100 < 26;
   }
 
-  function sectionOfRow(row) {
-    return SECTIONS[Math.floor((row - 1) / ROWS_PER_SECTION)];
-  }
+  function sectionOfRow(row) { return SECTIONS[Math.floor((row - 1) / ROWS)]; }
 
-  function rowsOf(index) {
-    var first = index * ROWS_PER_SECTION + 1;
-    var out = [];
-    for (var i = 0; i < ROWS_PER_SECTION; i++) out.push(first + i);
+  function rowsOf(i) {
+    var first = i * ROWS + 1, out = [];
+    for (var k = 0; k < ROWS; k++) out.push(first + k);
     return out;
   }
 
   function seatEl(id) { return el.map.querySelector('[data-seat="' + id + '"]'); }
 
-  /* Centro de una fila, en coordenadas del viewBox. */
-  function rowX(row) {
-    return ROW_X0 + (ROW_X1 - ROW_X0) * ((row - 0.5) / TOTAL_ROWS);
-  }
+  function rowX(row) { return X0 + (X1 - X0) * ((row - 0.5) / TOTAL_ROWS); }
 
-  /* viewBox -> píxeles dentro del escenario, respetando el escalado del SVG. */
+  /* viewBox -> píxeles del escenario, respetando el escalado del SVG. */
   function toPx(x) {
     var ctm = svg.getScreenCTM();
     if (!ctm) return 0;
@@ -109,60 +104,59 @@
 
   function drawPorts() {
     var out = '';
-    for (var r = 1; r <= TOTAL_ROWS; r++) {
-      out += '<circle cx="' + rowX(r).toFixed(1) + '" cy="105" r="4"/>';
-    }
+    for (var r = 1; r <= TOTAL_ROWS; r++) out += '<circle cx="' + rowX(r).toFixed(1) + '" cy="120" r="4.5"/>';
     el.ports.innerHTML = out;
   }
 
   function placeZone() {
     var rows = rowsOf(active);
-    var a = toPx(rowX(rows[0]) - 14);
-    var b = toPx(rowX(rows[rows.length - 1]) + 14);
+    var a = toPx(rowX(rows[0]) - 16);
+    var b = toPx(rowX(rows[rows.length - 1]) + 16);
     el.zone.style.left = a + 'px';
     el.zone.style.width = Math.max(0, b - a) + 'px';
+    el.zoneTag.textContent = t('short' + cap(SECTIONS[active].key)).toUpperCase();
   }
 
-  /* La animación: se mueve `left`, así el trayecto se ve. */
   function placePin(row) {
     el.pin.style.left = toPx(rowX(row)) + 'px';
     el.pinRow.textContent = row;
     el.pin.classList.add('on');
   }
 
-  /* ---------- construir el mapa ---------- */
+  /* ---------- mapa ---------- */
 
   function buildMap() {
     var frag = document.createDocumentFragment();
-    var rows = rowsOf(active);
 
-    LETTERS.forEach(function (letter) {
-      var tag = document.createElement('span');
-      tag.className = 'tag tag--letter';
-      tag.style.setProperty('--lp', LETTER_POS[letter]);
-      tag.textContent = letter;
-      frag.appendChild(tag);
+    LETTERS.forEach(function (L) {
+      var s = document.createElement('span');
+      s.className = 'tag tag--letter';
+      s.style.setProperty('--lp', LP[L]);
+      s.textContent = L;
+      frag.appendChild(s);
     });
 
-    rows.forEach(function (row, i) {
-      var tag = document.createElement('span');
-      tag.className = 'tag tag--row';
-      tag.style.setProperty('--rp', i + 1);
-      tag.textContent = row;
-      frag.appendChild(tag);
+    rowsOf(active).forEach(function (row, i) {
+      var n = document.createElement('span');
+      n.className = 'tag tag--row';
+      n.style.setProperty('--rp', i + 1);
+      n.textContent = row;
+      frag.appendChild(n);
 
-      LETTERS.forEach(function (letter) {
-        var id = row + letter;
+      LETTERS.forEach(function (L) {
+        var id = row + L;
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'seat';
         b.dataset.seat = id;
-        b.dataset.row = row;
-        b.style.setProperty('--lp', LETTER_POS[letter]);
+        b.style.setProperty('--lp', LP[L]);
         b.style.setProperty('--rp', i + 1);
-        b.textContent = id;
 
-        if (isTaken(row, letter)) {
+        var num = document.createElement('span');
+        num.className = 'seat__n';
+        b.appendChild(num);
+
+        if (isTaken(row, L)) {
           b.disabled = true;
           b.setAttribute('aria-label', fill(t('taken'), { s: id }));
         } else {
@@ -176,12 +170,21 @@
 
     el.map.innerHTML = '';
     el.map.appendChild(frag);
+    stampOrder();
+  }
+
+  /* El asiento elegido lleva el número de orden en que se eligió. */
+  function stampOrder() {
+    el.map.querySelectorAll('.seat').forEach(function (s) {
+      var i = picked.indexOf(s.dataset.seat);
+      s.querySelector('.seat__n').textContent = i === -1 ? '' : (i + 1);
+    });
   }
 
   function freeCount() {
     var n = 0;
     rowsOf(active).forEach(function (row) {
-      LETTERS.forEach(function (letter) { if (!isTaken(row, letter)) n++; });
+      LETTERS.forEach(function (L) { if (!isTaken(row, L)) n++; });
     });
     return n;
   }
@@ -208,14 +211,16 @@
       b.setAttribute('aria-selected', k === i ? 'true' : 'false');
     });
     buildMap();
-    renderHead();
+    head();
     placeZone();
   }
 
-  function renderHead() {
+  /* El título de la sección se dice corto en móvil y largo en web. */
+  function head() {
     var s = SECTIONS[active];
-    el.secName.textContent = t('section') + ' ' + s.n + ' (' + t(s.key) + ')';
-    el.secStat.textContent = freeCount() + ' ' + t('free') + ' · ' + money(s.price) + ' ' + t('perSeat');
+    el.secShort.textContent = t('short' + cap(s.key)) + ' · ' + t('sec') + ' ' + s.n;
+    el.secLong.textContent = t('section') + ' ' + s.n + ' (' + t(s.key) + ')';
+    el.secStat.textContent = freeCount() + ' ' + t('free') + ' · ' + money(s.price) + ' ' + t('per');
   }
 
   /* ---------- selección: 4 máximo, el quinto saca al más viejo ---------- */
@@ -264,11 +269,10 @@
   function countTo(target) {
     if (frame) cancelAnimationFrame(frame);
 
-    var from = shown;
-    var d = target - from;
+    var from = shown, d = target - from;
     if (d === 0) return;
 
-    /* Una pestaña en segundo plano no recibe frames: ahí se pone el valor final. */
+    /* Una pestaña en segundo plano no recibe frames: ahí se pone el final. */
     if (document.hidden) {
       shown = target;
       el.totalDesk.textContent = money(target);
@@ -277,7 +281,6 @@
     }
 
     var t0 = performance.now();
-
     frame = requestAnimationFrame(function step(now) {
       var p = Math.min(1, (now - t0) / 480);
       shown = from + d * (1 - Math.pow(1 - p, 3));
@@ -291,9 +294,7 @@
   /* ---------- fichas y totales ---------- */
 
   function sum() {
-    return picked.reduce(function (a, id) {
-      return a + sectionOfRow(parseInt(id, 10)).price;
-    }, 0);
+    return picked.reduce(function (a, id) { return a + sectionOfRow(parseInt(id, 10)).price; }, 0);
   }
 
   function chips(box, dark) {
@@ -324,6 +325,7 @@
   }
 
   function render() {
+    stampOrder();
     chips(el.chipsDesk, false);
     chips(el.chipsMob, true);
 
@@ -332,9 +334,7 @@
     el.ctaDesk.disabled = picked.length === 0;
     el.ctaMob.disabled = picked.length === 0;
 
-    if (!picked.length) {
-      el.pin.classList.remove('on');
-    }
+    if (!picked.length) el.pin.classList.remove('on');
 
     countTo(sum());
   }
@@ -354,17 +354,13 @@
   function applyLang() {
     document.documentElement.lang = lang;
     el.lang.textContent = lang === 'es' ? 'EN' : 'ES';
-    document.title = t('title') + ' — AV 8420';
 
-    document.querySelectorAll('[data-i18n]').forEach(function (n) {
-      n.textContent = t(n.dataset.i18n);
-    });
-    document.querySelectorAll('[data-i18n-aria]').forEach(function (n) {
-      n.setAttribute('aria-label', t(n.dataset.i18nAria));
-    });
+    document.querySelectorAll('[data-i18n]').forEach(function (n) { n.textContent = t(n.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (n) { n.setAttribute('aria-label', t(n.dataset.i18nAria)); });
 
     buildMap();
-    renderHead();
+    head();
+    placeZone();
     render();
   }
 
@@ -388,7 +384,7 @@
     });
   });
 
-  /* El pin y la franja están en píxeles: tienen que seguir al resize. */
+  /* El pin y el recuadro están en píxeles: siguen al resize. */
   var rt = null;
   window.addEventListener('resize', function () {
     clearTimeout(rt);
@@ -400,8 +396,7 @@
 
   drawPorts();
   buildSeg();
-  buildMap();
   applyLang();
   requestAnimationFrame(placeZone);
-  setTimeout(placeZone, 120);   /* por si el SVG aún no tiene tamaño */
+  setTimeout(placeZone, 150);   /* por si las fuentes aún no cargaron */
 })();

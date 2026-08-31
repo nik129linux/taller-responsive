@@ -5,31 +5,31 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Choose Seats — AV 8420</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-  /* Los breakpoints de la clase, más un paso intermedio propio en 900px.
-     "Usted puede crear un intermedio entre ellos, con una longitud X." */
+  /* Los puntos de quiebre de la clase, más un intermedio propio en 900px:
+     "usted puede crear un intermedio entre ellos, con una longitud X". */
   tailwind.config = {
     theme: {
-      screens: {
-        sm: '640px',
-        md: '768px',
-        bp: '900px',   // <- el intermedio propio
-        lg: '1024px',
-        xl: '1280px',
-        '2xl': '1536px'
-      },
+      screens: { sm:'640px', md:'768px', bp:'900px', lg:'1024px', xl:'1280px', '2xl':'1536px' },
       extend: {
+        fontFamily: {
+          sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        },
         colors: {
-          ink: '#0F1116',
-          paper: '#E7ECF5',
-          muted: '#7B8598',
-          hair: '#DDE4EF',
-          free: '#D9E1EE',
-          busy: '#A8B3C6',
-          pick: '#2733F0',
-          lime: '#C2F24B',
-          night: '#14171F'
+          ink:   '#0E0E11',
+          bg:    '#ECECEE',
+          muted: '#9A9AA2',
+          hair:  '#E9E9EC',
+          soft:  '#F4F4F6',
+          pick:  '#5B4BF5',
+          lime:  '#C9F24D',
+          night: '#0D0D0F'
         }
       }
     }
@@ -38,134 +38,158 @@
 <link rel="stylesheet" href="css/styles.css">
 </head>
 
-<body class="bg-paper text-ink antialiased">
+<body class="bg-bg font-sans text-ink antialiased">
 
-<!-- ============ ENCABEZADO ============
-     Móvil: flecha de volver + título centrado.
-     Web (lg): sin flecha, título a la izquierda y el pill de check-in. -->
-<header class="sticky top-0 z-30 flex items-center gap-3 border-b border-hair bg-white/85 px-4 py-3 backdrop-blur lg:px-8 lg:py-4">
+<!-- En web toda la app vive dentro de una tarjeta blanca flotando sobre el fondo.
+     En móvil se va a sangre: no hay ancho para regalar en márgenes. -->
+<div class="shell mx-auto max-w-[1500px] bg-white lg:my-6 lg:rounded-[32px] lg:px-10 lg:py-8 xl:my-8">
 
-  <button id="back" data-i18n-aria="back" aria-label="Volver"
-          class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink transition hover:bg-paper lg:hidden">
-    <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-  </button>
+  <!-- ================= ENCABEZADO ================= -->
+  <header class="sticky top-0 z-30 flex items-center gap-3 border-b border-hair bg-white/90 px-4 py-3 backdrop-blur lg:static lg:border-0 lg:p-0 lg:pb-7">
 
-  <div class="min-w-0 flex-1 text-center lg:flex-none lg:text-left">
-    <h1 data-i18n="title" class="truncate text-[17px] font-semibold leading-tight tracking-tight lg:text-2xl">Elegir asientos</h1>
-    <p class="truncate text-[11px] tracking-wide text-muted lg:text-xs">BOG · MDE · A320NEO · 13 SEP</p>
-  </div>
-
-  <!-- Solo web: en móvil no hay ancho para gastar en esto. -->
-  <span class="ml-auto hidden items-center gap-2 rounded-full border border-hair px-3.5 py-2 text-xs font-medium text-muted lg:inline-flex">
-    <i class="h-1.5 w-1.5 rounded-full bg-lime"></i><span data-i18n="checkin">Check-in abierto</span>
-  </span>
-
-  <button id="lang" aria-label="Español / English"
-          class="shrink-0 rounded-full border border-hair px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-pick hover:text-pick">EN</button>
-
-  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#C9CFDD] to-[#8A93A6] text-[11px] font-bold text-white">NC</span>
-</header>
-
-<!-- ============ AVIÓN ============
-     Es donde ocurre la animación: el pin recorre el fuselaje hasta la fila. -->
-<section aria-hidden="true"
-         class="relative mx-4 mt-4 overflow-hidden rounded-2xl bg-white lg:mx-8 lg:mt-6 lg:rounded-3xl">
-
-  <!-- Solo web. -->
-  <div class="absolute left-5 top-1/2 hidden -translate-y-1/2 flex-col gap-3 lg:flex">
-    <button class="grid h-11 w-11 place-items-center rounded-full border border-hair bg-white text-muted transition hover:text-pick">
-      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l7 9-7 9-7-9z"/></svg>
+    <!-- Solo móvil. -->
+    <button id="back" data-i18n-aria="back" aria-label="Volver"
+            class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-hair text-ink transition active:scale-95 lg:hidden">
+      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
-    <button class="grid h-11 w-11 place-items-center rounded-full border border-hair bg-white text-muted transition hover:text-pick">
-      <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 18a4 4 0 010-8 5 5 0 019.6-1.4A3.5 3.5 0 1117.5 18z"/></svg>
-    </button>
-  </div>
 
-  <div class="stage relative h-24 sm:h-28 bp:h-40 lg:h-48 xl:h-56">
-    <svg class="plane absolute inset-0 h-full w-full" viewBox="0 0 900 210" preserveAspectRatio="xMidYMid meet">
-      <path class="plane__wing" d="M470 106 L646 32 L680 32 L594 106 Z"/>
-      <path class="plane__wing" d="M470 110 L646 184 L680 184 L594 110 Z"/>
-      <path class="plane__wing" d="M796 104 L868 28 L890 28 L850 104 Z"/>
-      <path class="plane__body" d="M96 105 C96 79 150 66 250 64 L744 64 C814 64 864 84 880 105 C864 126 814 146 744 146 L250 146 C150 144 96 131 96 105 Z"/>
-      <path class="plane__nose" d="M38 105 C55 91 75 83 96 81 L96 129 C75 127 55 119 38 105 Z"/>
-      <g class="plane__ports" id="ports"></g>
-    </svg>
-
-    <span id="zone" class="zone"></span>
-    <span id="pin" class="pin"><b id="pinRow">1</b></span>
-  </div>
-</section>
-
-<!-- ============ SECCIONES ============ -->
-<div class="flex items-center gap-4 px-4 py-4 lg:px-8 lg:py-5">
-  <span class="hidden text-[11px] font-semibold tracking-[.18em] text-muted lg:block">SECTIONS</span>
-
-  <div id="seg" role="tablist" aria-label="Secciones"
-       class="flex flex-1 gap-1 rounded-full border border-hair bg-white p-1 lg:flex-none"></div>
-
-  <!-- Solo web. -->
-  <ul class="ml-auto hidden items-center gap-5 text-xs text-muted lg:flex">
-    <li class="flex items-center gap-2"><i class="h-2.5 w-2.5 rounded-full bg-free"></i><span data-i18n="legFree">Disponible</span></li>
-    <li class="flex items-center gap-2"><i class="h-2.5 w-2.5 rounded-full bg-busy"></i><span data-i18n="legBusy">Ocupado</span></li>
-    <li class="flex items-center gap-2"><i class="h-2.5 w-2.5 rounded-full bg-pick"></i><span data-i18n="legSel">Tu selección</span></li>
-  </ul>
-</div>
-
-<!-- ============ CUERPO ============
-     Móvil: una sola columna. Web (lg): la tarjeta 3D entra a la izquierda. -->
-<main class="grid gap-5 px-4 pb-28 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-6 lg:px-8 lg:pb-10 xl:grid-cols-[280px_minmax(0,1fr)]">
-
-  <!-- Solo web: debajo de lg esta tarjeta no se renderiza. -->
-  <aside class="relative hidden flex-col justify-end overflow-hidden rounded-3xl bg-night p-6 text-white lg:flex">
-    <span class="absolute left-6 top-6 grid h-11 w-11 place-items-center rounded-xl bg-lime text-night">
-      <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor"><path d="M4 4h3v3H4zM10 4h3v3h-3zM16 4h3v3h-3zM4 10h3v3H4zM10 10h3v3h-3zM16 10h3v3h-3zM4 16h3v3H4zM10 16h3v3h-3z"/></svg>
-    </span>
-    <a href="#" aria-label="Abrir" class="absolute right-6 top-6 text-white/60 transition hover:text-white">
-      <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
-    </a>
-    <h2 class="text-xl font-semibold tracking-tight">3D Rendering</h2>
-    <p data-i18n="promo" class="mt-2 text-[13px] leading-relaxed text-white/55">Recorre la cabina en tres dimensiones antes de elegir. Solo en pantallas grandes.</p>
-  </aside>
-
-  <section class="rounded-3xl bg-white p-4 sm:p-5 lg:p-7">
-    <header class="mb-5 flex flex-wrap items-baseline justify-between gap-2">
-      <h2 id="secName" class="text-[15px] font-semibold tracking-tight lg:text-lg">Sección 1</h2>
-      <p id="secStat" class="text-xs text-muted lg:text-[13px]"></p>
-    </header>
-
-    <div class="relative flex items-stretch gap-2 lg:gap-4">
-      <span class="skin hidden sm:block" aria-hidden="true"></span>
-      <div id="map" class="map min-w-0 flex-1"></div>
-      <span class="skin hidden sm:block" aria-hidden="true"></span>
+    <div class="min-w-0 flex-1 text-center lg:flex-none lg:text-left">
+      <h1 data-i18n="title" class="truncate text-[19px] font-extrabold leading-none tracking-[-.02em] lg:text-[40px]">Choose Seats</h1>
+      <p class="mt-1 truncate font-mono text-[10px] tracking-[.14em] text-muted lg:mt-2.5 lg:text-[11px]">
+        BOG <span class="text-muted/70">→</span> MDE ·<span class="hidden lg:inline"> A320NEO ·</span> 12 SEP
+      </p>
     </div>
 
-    <!-- Solo web: en móvil este trabajo lo hace la hoja oscura de abajo. -->
-    <footer class="mt-6 hidden items-center gap-4 border-t border-hair pt-5 lg:flex">
-      <div id="chipsDesk" class="flex min-h-[34px] flex-1 flex-wrap items-center gap-2"></div>
-      <div class="text-right">
-        <p data-i18n="total" class="text-[11px] uppercase tracking-wider text-muted">Total</p>
-        <strong id="totalDesk" class="text-xl font-semibold tabular-nums tracking-tight">$0</strong>
-      </div>
-      <button id="ctaDesk" disabled
-              class="shrink-0 rounded-full bg-lime px-6 py-3 text-sm font-semibold text-night transition hover:brightness-95 disabled:bg-free disabled:text-muted">
-        <span data-i18n="confirm">Confirmar</span> (<span id="nDesk">0</span>)
-      </button>
-    </footer>
-  </section>
-</main>
+    <!-- Solo web. -->
+    <span class="ml-auto mr-3 hidden items-center gap-2 rounded-full border border-hair px-4 py-2.5 text-[13px] font-medium lg:inline-flex">
+      <i class="h-2 w-2 rounded-full bg-lime"></i><span data-i18n="checkin">Check-in abierto</span>
+    </span>
 
-<!-- ============ HOJA MÓVIL ============
-     Solo móvil: desde lg no se renderiza. -->
-<div class="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 rounded-t-3xl bg-night px-4 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3 text-white lg:hidden">
-  <div id="chipsMob" class="chips-scroll flex min-w-0 flex-1 gap-1.5 overflow-x-auto"></div>
-  <strong id="totalMob" class="shrink-0 text-lg font-semibold tabular-nums tracking-tight">$0</strong>
-  <button id="ctaMob" disabled
-          class="shrink-0 rounded-full bg-lime px-5 py-2.5 text-[13px] font-semibold text-night transition disabled:bg-white/15 disabled:text-white/40">
-    <span data-i18n="confirm">Confirmar</span> (<span id="nMob">0</span>)
-  </button>
+    <button id="lang" aria-label="Español / English"
+            class="shrink-0 rounded-full border border-hair px-3 py-2 font-mono text-[10px] font-medium tracking-widest text-muted transition hover:border-ink hover:text-ink lg:mr-3">EN</button>
+
+    <span class="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#C9A882] text-[12px] font-bold text-white lg:h-12 lg:w-12 lg:text-[14px]">
+      JR<i class="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-night"></i>
+    </span>
+  </header>
+
+  <!-- ================= AVIÓN ================= -->
+  <section aria-hidden="true" class="hero relative mx-4 mt-4 overflow-hidden rounded-[22px] lg:mx-0 lg:mt-0 lg:rounded-[26px]">
+
+    <!-- Solo web. -->
+    <div class="absolute left-5 top-1/2 z-10 hidden -translate-y-1/2 flex-col gap-3 lg:flex">
+      <button class="grid h-12 w-12 place-items-center rounded-full bg-white shadow-[0_2px_10px_rgba(0,0,0,.07)] transition hover:scale-105">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="#0E0E11" stroke-width="1.4"><path d="M12 3.5l7.5 8.5-7.5 8.5L4.5 12z"/></svg>
+      </button>
+      <button class="grid h-12 w-12 place-items-center rounded-full bg-white shadow-[0_2px_10px_rgba(0,0,0,.07)] transition hover:scale-105">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="#0E0E11"><ellipse cx="12" cy="13" rx="8" ry="5.5"/></svg>
+      </button>
+    </div>
+
+    <div class="stage relative h-[104px] sm:h-[128px] bp:h-[168px] lg:h-[200px] xl:h-[232px]">
+      <svg class="plane absolute inset-0 h-full w-full" viewBox="0 0 1000 240" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#FBFBFC"/><stop offset="1" stop-color="#DEDEE3"/>
+          </linearGradient>
+          <linearGradient id="nose" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#F2F2F5"/><stop offset="1" stop-color="#D2D2D8"/>
+          </linearGradient>
+        </defs>
+        <g class="plane__shadow">
+          <path d="M520 116 L700 40 L742 40 L648 116 Z"/>
+          <path d="M520 124 L700 200 L742 200 L648 124 Z"/>
+          <path d="M872 114 L944 34 L968 34 L926 114 Z"/>
+        </g>
+        <path class="plane__nose" d="M40 120 C58 106 80 98 104 96 L104 144 C80 142 58 134 40 120 Z"/>
+        <path class="plane__body" d="M104 120 C104 92 162 78 268 76 L820 76 C900 76 952 96 968 120 C952 144 900 164 820 164 L268 164 C162 162 104 148 104 120 Z"/>
+        <g class="plane__ports" id="ports"></g>
+      </svg>
+
+      <span id="zone" class="zone"><b id="zoneTag" class="zone__tag">BUSINESS</b></span>
+      <span id="pin" class="pin"><b id="pinRow">1</b></span>
+    </div>
+  </section>
+
+  <!-- ================= SECCIONES ================= -->
+  <div class="flex items-center gap-5 px-4 py-4 lg:px-0 lg:py-6">
+    <span class="hidden font-mono text-[10px] tracking-[.2em] text-muted lg:block">SECTIONS</span>
+
+    <div id="seg" role="tablist" aria-label="Secciones"
+         class="flex flex-1 gap-1 rounded-full bg-soft p-1.5 lg:flex-none"></div>
+
+    <!-- Solo web. -->
+    <ul class="ml-auto hidden items-center gap-6 text-[13px] text-muted lg:flex">
+      <li class="flex items-center gap-2"><i class="h-2.5 w-2.5 rounded-[3px] bg-[#DCDCE1]"></i><span data-i18n="legFree">Disponible</span></li>
+      <li class="flex items-center gap-2"><i class="h-2.5 w-2.5 rounded-[3px] bg-[#C0C0C7]"></i><span data-i18n="legBusy">Ocupado</span></li>
+      <li class="flex items-center gap-2"><i class="h-2.5 w-2.5 rounded-[3px] bg-pick"></i><span data-i18n="legSel">Tu selección</span></li>
+    </ul>
+  </div>
+
+  <!-- ================= CUERPO ================= -->
+  <main class="grid gap-4 px-4 pb-44 lg:grid-cols-[236px_minmax(0,1fr)] lg:gap-5 lg:px-0 lg:pb-0 xl:grid-cols-[272px_minmax(0,1fr)]">
+
+    <!-- Solo web: debajo de lg esta tarjeta no se renderiza. -->
+    <aside class="relative hidden flex-col justify-end overflow-hidden rounded-[26px] bg-night p-7 text-white lg:flex">
+      <span class="absolute left-7 top-7 grid h-14 w-14 place-items-center rounded-2xl bg-lime text-night">
+        <svg viewBox="0 0 24 24" class="h-7 w-7" fill="currentColor"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/><circle cx="6" cy="18" r="1.6"/><circle cx="12" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></svg>
+      </span>
+      <a href="#" aria-label="Abrir" class="absolute right-7 top-7 text-white/45 transition hover:text-white">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
+      </a>
+      <h2 class="text-[22px] font-bold leading-tight tracking-[-.02em]">3D Rendering</h2>
+      <p data-i18n="promo" class="mt-2.5 text-[13px] leading-relaxed text-white/45">Recorre la cabina de tu avión con visualización 3D y siente lo que te espera a bordo.</p>
+    </aside>
+
+    <section class="rounded-[26px] bg-soft p-4 sm:p-5 lg:bg-soft lg:p-6">
+      <header class="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 class="text-[15px] font-bold tracking-[-.01em] lg:text-[17px]">
+          <span id="secShort" class="lg:hidden"></span>
+          <span id="secLong" class="hidden lg:inline"></span>
+        </h2>
+        <p id="secStat" class="font-mono text-[10px] tracking-wide text-muted lg:text-[11px]"></p>
+      </header>
+
+      <div class="relative flex items-stretch gap-2 lg:gap-5">
+        <span class="skin hidden lg:block" aria-hidden="true"></span>
+        <div id="map" class="map min-w-0 flex-1"></div>
+        <span class="skin hidden lg:block" aria-hidden="true"></span>
+      </div>
+
+      <!-- Solo web: en móvil este trabajo lo hace la hoja de abajo. -->
+      <footer class="mt-5 hidden items-center gap-5 rounded-[20px] bg-white px-5 py-4 lg:flex">
+        <div id="chipsDesk" class="flex min-h-[34px] flex-1 flex-wrap items-center gap-2"></div>
+        <div class="text-right">
+          <p data-i18n="total" class="font-mono text-[9px] tracking-[.2em] text-muted">TOTAL</p>
+          <strong id="totalDesk" class="text-[22px] font-bold tabular-nums tracking-[-.02em]">$0</strong>
+        </div>
+        <button id="ctaDesk" disabled
+                class="shrink-0 rounded-full bg-lime px-7 py-3.5 text-[14px] font-bold text-night transition hover:brightness-95 disabled:bg-hair disabled:text-muted">
+          <span data-i18n="confirm">Confirmar</span> (<span id="nDesk">0</span>)
+        </button>
+      </footer>
+    </section>
+  </main>
 </div>
 
-<div id="toast" role="status" aria-live="polite" class="toast">…</div>
+<!-- ================= HOJA MÓVIL =================
+     Solo móvil: desde lg no se renderiza. Dos filas, como el diseño. -->
+<div class="sheet lg:hidden">
+  <span class="sheet__grab" aria-hidden="true"></span>
+  <div id="chipsMob" class="chips-scroll flex gap-2 overflow-x-auto px-4 pb-3.5"></div>
+  <div class="flex items-center gap-3 px-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
+    <div class="min-w-0">
+      <p data-i18n="total" class="font-mono text-[9px] tracking-[.2em] text-white/40">TOTAL</p>
+      <strong id="totalMob" class="text-[26px] font-bold tabular-nums tracking-[-.02em] text-white">$0</strong>
+    </div>
+    <button id="ctaMob" disabled
+            class="ml-auto shrink-0 rounded-full bg-lime px-7 py-3.5 text-[14px] font-bold text-night transition disabled:bg-white/12 disabled:text-white/35">
+      <span data-i18n="confirm">Confirmar</span> (<span id="nMob">0</span>)
+    </button>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite" class="toast"></div>
 
 <script src="js/app.js"></script>
 </body>
