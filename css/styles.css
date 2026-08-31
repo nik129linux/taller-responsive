@@ -36,7 +36,7 @@
   border-radius: 13px;
   border: 1.5px solid rgba(14, 14, 17, .5);
   background: rgba(255, 255, 255, .22);
-  box-shadow: 0 10px 26px rgba(14, 14, 17, .14), 0 2px 6px rgba(14, 14, 17, .08);
+  box-shadow: 0 16px 34px rgba(14, 14, 17, .22), 0 4px 10px rgba(14, 14, 17, .12);
   transition: left .5s cubic-bezier(.4, 0, .2, 1), width .5s cubic-bezier(.4, 0, .2, 1);
   pointer-events: none;
 }
@@ -150,35 +150,60 @@
 }
 
 .seat {
+  position: relative;
   grid-column: var(--lp);
   grid-row: calc(var(--rp) + 1);
   display: grid;
   place-items: center;
   aspect-ratio: 1;
   min-width: 0;
-  padding: 0;
+  padding: 0 0 22% 0;          /* deja el hueco del respaldo */
   border: 0;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #F0F0F3, #DFDFE6);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), 0 1px 2px rgba(14, 14, 17, .06);
+  background: transparent;
   cursor: pointer;
-  transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+  transition: transform .18s ease;
 }
 .seat:hover:not(:disabled) { transform: translateY(-2px); }
 .seat:focus-visible { outline: 2px solid var(--pick); outline-offset: 2px; }
-.seat:disabled {
-  background: linear-gradient(180deg, #CBCBD2, #BABAC3);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5);
-  cursor: not-allowed;
+.seat:disabled { cursor: not-allowed; }
+
+/* El asiento son dos piezas: el cuerpo y el respaldo.
+   En móvil el avión va parado, así que el respaldo queda abajo;
+   en web el avión está acostado con el morro a la izquierda,
+   así que el respaldo se va al costado derecho. */
+.seat::before,
+.seat::after {
+  content: "";
+  position: absolute;
+  transition: background .18s ease, box-shadow .18s ease;
 }
 
-.seat[aria-pressed="true"] {
+.seat::before {
+  inset: 0 0 22% 0;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #F0F0F3, #DFDFE6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), 0 1px 2px rgba(14, 14, 17, .06);
+}
+
+.seat::after {
+  inset: 84% 12% 0 12%;
+  border-radius: 4px;
+  background: #E4E4EA;
+}
+
+.seat:disabled::before { background: linear-gradient(180deg, #CBCBD2, #BABAC3); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5); }
+.seat:disabled::after  { background: #C2C2CA; }
+
+.seat[aria-pressed="true"]::before {
   background: linear-gradient(180deg, #7062F8, #4B39F0);
   box-shadow: 0 6px 18px rgba(91, 75, 245, .5), inset 0 1px 0 rgba(255, 255, 255, .35);
 }
+.seat[aria-pressed="true"]::after { background: #9086FA; }
 
 /* El asiento elegido muestra en qué orden se eligió. */
 .seat__n {
+  position: relative;
+  z-index: 1;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: -.02em;
@@ -227,7 +252,9 @@
     grid-template-columns: 26px repeat(8, 34px);
     grid-template-rows: 18px repeat(3, 34px) 14px repeat(3, 34px);
   }
-  .seat        { grid-column: calc(var(--rp) + 1); grid-row: calc(var(--lp) + 1); aspect-ratio: auto; }
+  .seat        { grid-column: calc(var(--rp) + 1); grid-row: calc(var(--lp) + 1); aspect-ratio: auto; padding: 0 22% 0 0; }
+  .seat::before { inset: 0 22% 0 0; }
+  .seat::after  { inset: 12% 0 12% 84%; }
   .tag--letter { grid-column: 1; grid-row: calc(var(--lp) + 1); }
   .tag--row    { grid-row: 1; grid-column: calc(var(--rp) + 1); }
 }
@@ -239,7 +266,8 @@
     grid-template-columns: 28px repeat(8, 40px);
     grid-template-rows: 20px repeat(3, 40px) 16px repeat(3, 40px);
   }
-  .seat { border-radius: 12px; }
+  .seat::before { border-radius: 12px; }
+  .seat::after  { border-radius: 5px; }
   .seat__n { font-size: 15px; }
 }
 
