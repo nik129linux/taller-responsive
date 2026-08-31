@@ -5,7 +5,10 @@ Diseño de Interfaces Software · UCC · 31 de agosto de 2026
 Selección de asiento de avión. **Una sola interfaz**, no dos: lo que cambia entre
 móvil y web son los puntos de quiebre.
 
-Abrir `index.html`. No hay build ni instalación.
+**Demo:** https://taller-responsive-gamma.vercel.app
+**Repositorio:** https://github.com/nik129linux/taller-responsive
+
+También abre local: `index.html` directo, no hay build ni instalación.
 
 ---
 
