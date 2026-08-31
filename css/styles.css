@@ -172,7 +172,7 @@
 }
 .seat:hover:not(:disabled) { transform: translateY(-2px); }
 .seat:focus-visible { outline: 2px solid var(--pick); outline-offset: 3px; }
-.seat:disabled { cursor: not-allowed; background: #C4C4CC; }
+.seat:disabled { cursor: not-allowed; background: #ABABB7; }
 
 /* Reposacabezas: barra horizontal abajo (móvil). 10/50 de alto, 6/50 de aire. */
 .seat::after {
@@ -186,7 +186,7 @@
   background: rgba(176, 176, 186, .55);
   transition: background .18s ease;
 }
-.seat:disabled::after { background: rgba(138, 138, 150, .5); }
+.seat:disabled::after { background: rgba(110, 110, 126, .55); }
 
 .seat[aria-pressed="true"] {
   background: #6644FF;
