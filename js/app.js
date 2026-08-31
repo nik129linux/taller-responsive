@@ -18,36 +18,20 @@
   var TOTAL_ROWS = SECTIONS.length * ROWS;
   var X0 = 170, X1 = 900;     /* extremos de la cabina en el viewBox del avión */
 
-  var I18N = {
-    es: {
-      title: 'Choose Seats', checkin: 'Check-in abierto', back: 'Volver',
-      legFree: 'Disponible', legBusy: 'Ocupado', legSel: 'Tu selección',
-      total: 'TOTAL', confirm: 'Confirmar',
-      business: 'Business Class', premium: 'Premium Economy', economy: 'Económica',
-      shortBusiness: 'Business', shortPremium: 'Premium', shortEconomy: 'Económica',
-      section: 'Section', sec: 'Sec', free: 'libres', per: '/ asiento',
-      empty: 'Ningún asiento elegido',
-      promo: 'Recorre la cabina de tu avión con visualización 3D y siente lo que te espera a bordo.',
-      seat: 'Asiento {s}', taken: 'Asiento {s}, ocupado',
-      swap: 'Solo van 4 puestos: {a} salió y entró {b}.',
-      ok: 'Reservado: {s} por {t}.'
-    },
-    en: {
-      title: 'Choose Seats', checkin: 'Check-in open', back: 'Back',
-      legFree: 'Available', legBusy: 'Taken', legSel: 'Your pick',
-      total: 'TOTAL', confirm: 'Confirm',
-      business: 'Business Class', premium: 'Premium Economy', economy: 'Economy',
-      shortBusiness: 'Business', shortPremium: 'Premium', shortEconomy: 'Economy',
-      section: 'Section', sec: 'Sec', free: 'free', per: '/ seat',
-      empty: 'No seats picked',
-      promo: 'Walk your cabin in 3D and feel what is waiting for you on board.',
-      seat: 'Seat {s}', taken: 'Seat {s}, taken',
-      swap: 'Only 4 seats: {a} was dropped for {b}.',
-      ok: 'Booked: {s} for {t}.'
-    }
+  var T = {
+    title: 'Choose Seats', checkin: 'Check-in abierto', back: 'Volver',
+    legFree: 'Disponible', legBusy: 'Ocupado', legSel: 'Tu selección',
+    total: 'TOTAL', confirm: 'Confirmar',
+    business: 'Business Class', premium: 'Premium Economy', economy: 'Económica',
+    shortBusiness: 'Business', shortPremium: 'Premium', shortEconomy: 'Económica',
+    section: 'Section', sec: 'Sec', free: 'libres', per: '/ asiento',
+    empty: 'Ningún asiento elegido',
+    promo: 'Recorre la cabina de tu avión con visualización 3D y siente lo que te espera a bordo.',
+    seat: 'Asiento {s}', taken: 'Asiento {s}, ocupado',
+    swap: 'Solo van 4 puestos: {a} salió y entró {b}.',
+    ok: 'Reservado: {s} por {t}.'
   };
 
-  var lang = 'es';
   var active = 0;
   var picked = [];        /* FIFO: el más viejo primero */
   var shown = 0;
@@ -60,14 +44,14 @@
     chipsDesk: $('chipsDesk'), chipsMob: $('chipsMob'),
     totalDesk: $('totalDesk'), totalMob: $('totalMob'),
     nDesk: $('nDesk'), nMob: $('nMob'), ctaDesk: $('ctaDesk'), ctaMob: $('ctaMob'),
-    toast: $('toast'), lang: $('lang'), back: $('back')
+    toast: $('toast'), back: $('back')
   };
   var svg = document.querySelector('.plane');
   var stage = document.querySelector('.stage');
 
   /* ---------- helpers ---------- */
 
-  function t(k) { return (I18N[lang] && I18N[lang][k]) || k; }
+  function t(k) { return T[k] || k; }
   function fill(s, v) { return s.replace(/\{(\w+)\}/g, function (_, k) { return v[k]; }); }
   function money(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -114,6 +98,15 @@
     var b = toPx(rowX(rows[rows.length - 1]) + 16);
     el.zone.style.left = a + 'px';
     el.zone.style.width = Math.max(0, b - a) + 'px';
+
+    /* El alto sale del fuselaje dibujado, no de un porcentaje del contenedor:
+       el SVG se escala distinto en cada ancho y un % se despegaba del avión. */
+    var body = svg.querySelector('.plane__body').getBoundingClientRect();
+    var box = stage.getBoundingClientRect();
+    var pad = Math.max(6, body.height * 0.16);
+    el.zone.style.top = (body.top - box.top - pad) + 'px';
+    el.zone.style.height = (body.height + pad * 2) + 'px';
+
     el.zoneTag.textContent = t('short' + cap(SECTIONS[active].key)).toUpperCase();
   }
 
@@ -349,12 +342,9 @@
     timer = setTimeout(function () { el.toast.classList.remove('on'); }, 2800);
   }
 
-  /* ---------- idioma ---------- */
+  /* ---------- textos ---------- */
 
-  function applyLang() {
-    document.documentElement.lang = lang;
-    el.lang.textContent = lang === 'es' ? 'EN' : 'ES';
-
+  function applyText() {
     document.querySelectorAll('[data-i18n]').forEach(function (n) { n.textContent = t(n.dataset.i18n); });
     document.querySelectorAll('[data-i18n-aria]').forEach(function (n) { n.setAttribute('aria-label', t(n.dataset.i18nAria)); });
 
@@ -369,11 +359,6 @@
   el.map.addEventListener('click', function (e) {
     var s = e.target.closest('.seat');
     if (s && !s.disabled) toggle(s.dataset.seat);
-  });
-
-  el.lang.addEventListener('click', function () {
-    lang = lang === 'es' ? 'en' : 'es';
-    applyLang();
   });
 
   el.back.addEventListener('click', function () { history.back(); });
@@ -396,7 +381,7 @@
 
   drawPorts();
   buildSeg();
-  applyLang();
+  applyText();
   requestAnimationFrame(placeZone);
   setTimeout(placeZone, 150);   /* por si las fuentes aún no cargaron */
 })();

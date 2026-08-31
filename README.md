@@ -90,8 +90,6 @@ Y dos que no desaparecen, cambian de forma:
 - **El avión se anima.** El pin recorre el fuselaje hasta la fila elegida y la
   franja de la sección se desliza al cambiar de sección. De la fila 2 a la 6 se
   ve el recorrido; no aparece de golpe en el destino.
-- **Español por defecto, inglés a un clic**, incluidas las etiquetas de lector
-  de pantalla. La selección se conserva al cambiar de idioma.
 - Los asientos son `<button>` con `aria-pressed` y `aria-label`.
 - `prefers-reduced-motion` apaga todas las animaciones.
 

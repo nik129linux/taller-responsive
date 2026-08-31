@@ -31,8 +31,6 @@ REQUISITOS
  10. Botón de confirmar.
  11. El encabezado cambia: en móvil hay botón de volver, en web aparece la
      navegación (check-in, mis vuelos).
- 12. Español por defecto con toggle a inglés (requisito permanente de la
-     materia desde el 2026-08-24).
 
 MAQUETA DE REFERENCIA (proyectada en clase)
   Dos artboards del mismo diseño, WEB 1280 y MOBILE 390:
