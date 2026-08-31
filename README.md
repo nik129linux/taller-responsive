@@ -97,7 +97,8 @@ Y dos que no desaparecen, cambian de forma:
   | Reposacabezas | 10 de alto, 6 de aire | 10 de ancho, 6 de aire |
   | Número | oculto | 18 px, blanco, centrado |
   | Elegido | `#6644FF` · barra `rgba(209,196,233,.6)` | igual |
-  | Libre | `#F2F2F2` · barra `rgba(200,200,200,.4)` | igual |
+  | Libre | `#E3E3E8` · barra `rgba(176,176,186,.55)` | igual |
+  | Ocupado | `#C4C4CC` · barra `rgba(138,138,150,.5)` | igual |
 
   Los 50 y 60 px son el tope: en pantallas angostas el asiento baja
   proporcionalmente para que la cabina nunca empuje la página de costado.
