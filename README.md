@@ -86,9 +86,21 @@ Y dos que no desaparecen, cambian de forma:
 - **Tres secciones** (Business $480, Premium Economy $260, Económica $160),
   8 filas de 6 asientos cada una.
 - **El asiento elegido muestra el orden** en que se eligió: 1, 2, 3, 4.
-- **El asiento son dos piezas**, cuerpo y respaldo, y el respaldo gira con la
-  grilla: abajo en móvil (el avión va parado) y a la derecha en web (el avión
-  está acostado con el morro a la izquierda).
+- **El asiento es un componente con reposacabezas adentro**, y el
+  reposacabezas gira con la grilla: barra horizontal abajo en móvil (el avión
+  va parado) y barra vertical a la derecha en web (el avión está acostado con
+  el morro a la izquierda).
+
+  | | Móvil | Web |
+  |---|---|---|
+  | Cuadro | 50 × 50, radio 12 | 60 × 60, radio 14 |
+  | Reposacabezas | 10 de alto, 6 de aire | 10 de ancho, 6 de aire |
+  | Número | oculto | 18 px, blanco, centrado |
+  | Elegido | `#6644FF` · barra `rgba(209,196,233,.6)` | igual |
+  | Libre | `#F2F2F2` · barra `rgba(200,200,200,.4)` | igual |
+
+  Los 50 y 60 px son el tope: en pantallas angostas el asiento baja
+  proporcionalmente para que la cabina nunca empuje la página de costado.
 - **Máximo 4 puestos.** El quinto reemplaza al más antiguo y avisa cuál salió.
 - **El total cuenta, no salta.** `requestAnimationFrame` con easing cúbico.
 - **El avión se anima.** El pin recorre el fuselaje hasta la fila elegida y la
